@@ -6,6 +6,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import DraftCard from "@/components/DraftCard";
 import ResponsiveLayout from "@/components/ResponsiveLayout";
 import CollapsibleSection from "@/components/CollapsibleSection";
+import RefinementFlow from "@/components/RefinementFlow";
 import { stableHash, getCachedResult, setCachedResult, clearExpiredCache } from "@/lib/aiCache";
 import { apiClient, APIError } from "@/lib/api-client";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -118,15 +119,16 @@ export default function CommunicationPage() {
     });
 
     const [storedData, setStoredData] = useLocalStorage<CommunicationStoredData | null>("communication_stored_data", null);
-    const [refiningAnswer, setRefiningAnswer] = useLocalStorage<string>("communication_refine_answer", "");
 
     const [draftsData, setDraftsData] = useState<CommunicateOutput | null>(null);
     const [lastExampleId, setLastExampleId] = useLocalStorage<string | null>("communication_last_example_id", null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isRefining, setIsRefining] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [rateLimitInfo, setRateLimitInfo] = useState<RateLimitInfo | null>(null);
     const [retryStatus, setRetryStatus] = useState<{ attempt: number; maxRetries: number } | null>(null);
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+    const [refinementKey, setRefinementKey] = useState(0);
 
     const [isClient, setIsClient] = useState(false);
     const hasHydrated = useRef(false);
@@ -158,17 +160,6 @@ export default function CommunicationPage() {
     }, [inputText, contexts, intent, options, storedData]);
 
     useEffect(() => {
-        if (!isClient || !draftsData || !storedData) return;
-        const validate = async () => {
-            const currentHash = await computeBaseHash(inputText, contexts, intent, options);
-            if (storedData.requestHash !== currentHash) {
-                setRefiningAnswer("");
-            }
-        };
-        validate();
-    }, [inputText, contexts, intent, options, isClient]);
-
-    useEffect(() => {
         if (rateLimitInfo && rateLimitInfo.countdown > 0) {
             countdownIntervalRef.current = setInterval(() => {
                 setRateLimitInfo(prev => {
@@ -191,7 +182,7 @@ export default function CommunicationPage() {
         else setContexts([...contexts, val]);
     };
 
-    const handleGenerate = async (isRefining = false) => {
+    const handleGenerate = async () => {
         if (!inputText.trim()) {
             setError("Please enter the message you want to communicate.");
             return;
@@ -200,7 +191,6 @@ export default function CommunicationPage() {
             setError("Please select at least one communication context.");
             return;
         }
-
         if (isLoading) return;
 
         const request = {
@@ -208,7 +198,6 @@ export default function CommunicationPage() {
             contexts,
             intent: intent.toLowerCase(),
             options,
-            refiningAnswer: isRefining ? refiningAnswer || undefined : undefined
         };
 
         setIsLoading(true);
@@ -217,30 +206,25 @@ export default function CommunicationPage() {
         setRetryStatus(null);
 
         try {
-            if (!isRefining) {
-                const cacheKey = await stableHash(request);
-                const cached = getCachedResult(cacheKey);
-                if (cached) {
-                    setDraftsData(cached.data);
-                    const currentHash = await computeBaseHash(inputText, contexts, intent, options);
-                    setStoredData({ requestHash: currentHash, result: cached.data });
-                    setIsLoading(false);
-                    return;
-                }
+            const cacheKey = await stableHash(request);
+            const cached = getCachedResult(cacheKey);
+            if (cached) {
+                setDraftsData(cached.data);
+                const currentHash = await computeBaseHash(inputText, contexts, intent, options);
+                setStoredData({ requestHash: currentHash, result: cached.data });
+                setRefinementKey(k => k + 1);
+                setIsLoading(false);
+                return;
             }
 
-            const data = await apiClient<CommunicateOutput>("/api/communicate", request, {
+            const data = await apiClient<CommunicateOutput>("/api/communicate", { action: "generate", ...request }, {
                 onRetry: (attempt, maxRetries) => setRetryStatus({ attempt, maxRetries })
             });
             const currentHash = await computeBaseHash(inputText, contexts, intent, options);
             setStoredData({ requestHash: currentHash, result: data });
             setDraftsData(data);
-            setRefiningAnswer("");
-
-            if (!isRefining) {
-                const cacheKey = await stableHash(request);
-                setCachedResult(cacheKey, data);
-            }
+            setRefinementKey(k => k + 1);
+            setCachedResult(cacheKey, data);
         } catch (err: any) {
             if (err.errorType === "RATE_LIMIT") {
                 const retryAfter = err.retryAfterSeconds || 60;
@@ -254,10 +238,47 @@ export default function CommunicationPage() {
         }
     };
 
+    const handleApplyRefinement = async (answers: [string, string, string], extraContext: string) => {
+        if (!draftsData || !inputText.trim()) return;
+
+        setIsRefining(true);
+        setError(null);
+
+        try {
+            const data = await apiClient<CommunicateOutput>("/api/communicate", {
+                action: "refine",
+                message: inputText,
+                contexts,
+                intent: intent.toLowerCase(),
+                options,
+                refining_answers: answers,
+                extra_context: extraContext || undefined,
+                prior_questions: draftsData.refining_questions,
+            }, {
+                onRetry: (attempt, maxRetries) => setRetryStatus({ attempt, maxRetries })
+            });
+            const currentHash = await computeBaseHash(inputText, contexts, intent, options);
+            setStoredData({ requestHash: currentHash, result: data });
+            setDraftsData(data);
+        } catch (err: any) {
+            if (err.errorType === "RATE_LIMIT") {
+                const retryAfter = err.retryAfterSeconds || 60;
+                setRateLimitInfo({ retryAfterSeconds: retryAfter, countdown: retryAfter });
+                setError(err.message);
+            } else {
+                setError(err.message || "Failed to apply refinement");
+            }
+        } finally {
+            setIsRefining(false);
+            setRetryStatus(null);
+        }
+    };
+
     const clearSession = () => {
         setInputText("");
         setDraftsData(null);
         setStoredData(null);
+        setRefinementKey(0);
         setIsResetModalOpen(false);
     };
 
@@ -269,8 +290,8 @@ export default function CommunicationPage() {
         const randomExample = available[Math.floor(Math.random() * available.length)];
         setDraftsData(null);
         setStoredData(null);
-        setRefiningAnswer("");
         setError(null);
+        setRefinementKey(0);
         setInputText(randomExample.message);
         setContexts(randomExample.contexts);
         setIntent(randomExample.intent);
@@ -452,8 +473,8 @@ export default function CommunicationPage() {
                     </div>
                 )}
                 <button
-                    onClick={() => handleGenerate(false)}
-                    disabled={isLoading || contexts.length === 0 || !!rateLimitInfo}
+                    onClick={handleGenerate}
+                    disabled={isLoading || isRefining || contexts.length === 0 || !!rateLimitInfo}
                     className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-3 active:scale-[0.98]"
                 >
                     {isLoading ? (
@@ -472,7 +493,7 @@ export default function CommunicationPage() {
 
                 {error && !isLoading && !rateLimitInfo && (
                     <button
-                        onClick={() => handleGenerate(false)}
+                        onClick={handleGenerate}
                         className="w-full py-2 text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center justify-center gap-1 transition-colors"
                     >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -508,31 +529,17 @@ export default function CommunicationPage() {
                         ))}
                     </div>
 
-                    {/* Refining Question Card */}
-                    <div className="p-6 glass-light !bg-indigo-50 !border-indigo-400/40 rounded-2xl shadow-md space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-indigo-700 text-white rounded-lg flex items-center justify-center text-sm shadow-md shadow-indigo-500/20">✨</div>
-                            <h3 className="font-black text-indigo-950 uppercase tracking-widest text-[10px]">Help me refine</h3>
-                        </div>
-                        <p className="text-base font-black text-indigo-950 leading-relaxed italic">
-                            &quot;{draftsData.refining_question}&quot;
-                        </p>
-                        <div className="space-y-3">
-                            <textarea
-                                value={refiningAnswer}
-                                onChange={(e) => setRefiningAnswer(e.target.value)}
-                                placeholder="Answer this question or add more context..."
-                                className="w-full p-4 bg-white border-2 border-indigo-200 rounded-xl text-base focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-indigo-400/60 min-h-[100px] text-indigo-950 font-bold"
-                            />
-                            <button
-                                onClick={() => handleGenerate(true)}
-                                disabled={isLoading || !refiningAnswer.trim()}
-                                className="w-full py-3 bg-indigo-600 text-white border border-indigo-700 rounded-xl font-black hover:bg-indigo-700 transition-all text-xs uppercase tracking-widest shadow-md disabled:bg-slate-300 disabled:opacity-50 active:scale-95"
-                            >
-                                {isLoading ? "Refining..." : "Update Drafts"}
-                            </button>
-                        </div>
-                    </div>
+                    {/* 3-step Refinement Flow */}
+                    {draftsData.refining_questions && draftsData.refining_questions.length >= 3 && (
+                        <RefinementFlow
+                            key={refinementKey}
+                            questions={draftsData.refining_questions}
+                            onApply={handleApplyRefinement}
+                            onReset={() => { }}
+                            isLoading={isRefining}
+                            themeColor="indigo"
+                        />
+                    )}
                 </>
             ) : (
                 <div className="h-[400px] flex flex-col items-center justify-center text-center p-8 glass-light !bg-white/10 !border-dashed !border-white/20">
