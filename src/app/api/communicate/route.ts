@@ -1,9 +1,40 @@
 import { NextResponse } from "next/server";
-import { CommunicateInputSchema, CommunicateOutputSchema } from "@/lib/schemas";
+import {
+    CommunicateInputSchema,
+    CommunicateOutputSchema,
+    CommunicateRefineInputSchema,
+} from "@/lib/schemas";
 import { generateStructuredData, isRateLimitError, extractRetryDelay } from "@/lib/geminiClient";
-import { buildCommunicatePrompt, COMMUNICATE_SYSTEM_PROMPT } from "@/lib/prompts";
+import {
+    buildCommunicatePrompt,
+    buildCommunicateRefinePrompt,
+    COMMUNICATE_SYSTEM_PROMPT,
+} from "@/lib/prompts";
 
 const DEBUG_AI = process.env.DEBUG_AI === "true";
+
+// Native Gemini schema (includes refining_questions array of 3)
+const COMM_GEMINI_SCHEMA = {
+    type: "object",
+    properties: {
+        drafts: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    context: { type: "string" },
+                    intent: { type: "string" },
+                    draft: { type: "string" },
+                    key_changes: { type: "array", items: { type: "string" } },
+                    tone: { type: "string" }
+                },
+                required: ["context", "intent", "draft", "key_changes", "tone"]
+            }
+        },
+        refining_questions: { type: "array", items: { type: "string" } }
+    },
+    required: ["drafts", "refining_questions"]
+};
 
 export async function POST(req: Request) {
     try {
@@ -14,11 +45,10 @@ export async function POST(req: Request) {
             body = await req.json();
             if (DEBUG_AI) {
                 console.log(`\n========================================`);
-                console.log(`[DEBUG_AI] /api/communicate - Request received`);
+                console.log(`[DEBUG_AI] /api/communicate - action: ${body.action || "generate"}`);
                 console.log(`Contexts: ${(body.contexts || []).join(", ")}`);
-                console.log(`Intent: ${body.intent || 'undefined'}`);
-                console.log(`Message (first 300 chars): ${(body.message || '').substring(0, 300)}`);
-                console.log(`Options:`, body.options);
+                console.log(`Intent: ${body.intent || "undefined"}`);
+                console.log(`Message (first 300 chars): ${(body.message || "").substring(0, 300)}`);
                 console.log(`========================================\n`);
             }
         } catch (parseError: any) {
@@ -29,7 +59,47 @@ export async function POST(req: Request) {
             );
         }
 
-        // Validate Input
+        const action = body.action ?? "generate";
+
+        // ── REFINE action ──────────────────────────────────────────────────────
+        if (action === "refine") {
+            const parseResult = CommunicateRefineInputSchema.safeParse(body);
+            if (!parseResult.success) {
+                return NextResponse.json(
+                    { errorType: "INVALID_INPUT", message: "Invalid refine input", details: parseResult.error.issues },
+                    { status: 400 }
+                );
+            }
+
+            const { message, contexts, intent, options, refining_answers, extra_context } = parseResult.data;
+            const priorQuestions = body.prior_questions as [string, string, string] | undefined;
+
+            const userPrompt = buildCommunicateRefinePrompt(
+                message,
+                contexts,
+                intent,
+                options,
+                refining_answers,
+                extra_context,
+                priorQuestions
+            );
+
+            const output = await generateStructuredData(
+                COMMUNICATE_SYSTEM_PROMPT,
+                userPrompt,
+                CommunicateOutputSchema,
+                "Communication Refinement",
+                COMM_GEMINI_SCHEMA
+            );
+
+            if (DEBUG_AI) {
+                console.log(`[DEBUG_AI] /api/communicate - Refine success, ${output.drafts.length} drafts\n`);
+            }
+
+            return NextResponse.json(output);
+        }
+
+        // ── GENERATE action ────────────────────────────────────────────────────
         const parseResult = CommunicateInputSchema.safeParse(body);
         if (!parseResult.success) {
             return NextResponse.json(
@@ -41,35 +111,12 @@ export async function POST(req: Request) {
         const { message, contexts, intent, options, refiningAnswer } = parseResult.data;
         const userPrompt = buildCommunicatePrompt(message, contexts, intent, options, refiningAnswer);
 
-        // Native Gemini schema for Communication
-        const responseSchema = {
-            type: "object",
-            properties: {
-                drafts: {
-                    type: "array",
-                    items: {
-                        type: "object",
-                        properties: {
-                            context: { type: "string" },
-                            intent: { type: "string" },
-                            draft: { type: "string" },
-                            key_changes: { type: "array", items: { type: "string" } },
-                            tone: { type: "string" }
-                        },
-                        required: ["context", "intent", "draft", "key_changes", "tone"]
-                    }
-                },
-                refining_question: { type: "string" }
-            },
-            required: ["drafts", "refining_question"]
-        };
-
         const output = await generateStructuredData(
             COMMUNICATE_SYSTEM_PROMPT,
             userPrompt,
             CommunicateOutputSchema,
             "Communication Drafts",
-            responseSchema
+            COMM_GEMINI_SCHEMA
         );
 
         if (DEBUG_AI) {
@@ -81,7 +128,6 @@ export async function POST(req: Request) {
     } catch (error: any) {
         console.error("[ERROR] Communication API Error:", error.message);
 
-        // Check for rate limit
         if (isRateLimitError(error)) {
             const retryAfter = extractRetryDelay(error);
             return NextResponse.json({
@@ -91,7 +137,6 @@ export async function POST(req: Request) {
             }, { status: 429 });
         }
 
-        // Build error response for other errors
         const errorResponse: any = {
             errorType: error.errorType || "AI_ERROR",
             message: error.message || "AI request failed."

@@ -10,9 +10,16 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  --shadow-glass: 0 20px 60px rgba(0, 0, 0, 0.25);
-  --shadow-glass-dark: 0 20px 60px rgba(0, 0, 0, 0.35);
-  --shadow-luminous: 0 20px 80px rgba(0, 0, 0, 0.15);
+  /* Consolidating and refining glass shadows to avoid duplicate property linting errors */
+  --shadow-glass-base: 0 20px 60px rgba(0, 0, 0, 0.25);
+  --shadow-glass-dark-base: 0 20px 60px rgba(0, 0, 0, 0.35);
+  --shadow-luminous-base: 0 20px 80px rgba(0, 0, 0, 0.15);
+
+  /* Specific inset shadows for glass effects */
+  --shadow-glass-light: 0 8px 32px 0 rgba(31, 38, 135, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  --shadow-glass-dark: 0 8px 32px 0 rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  --shadow-glass-luminous: 0 8px 32px 0 rgba(31, 38, 135, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+  --shadow-glass-dark-nav: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 
   --drop-shadow-heading: 0 2px 4px rgba(0, 0, 0, 0.3);
   --drop-shadow-body: 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -101,23 +108,19 @@ body {
   }
 
   .glass-light {
-    @apply bg-white/92 backdrop-blur-2xl border border-white/40 shadow-glass rounded-2xl;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    @apply bg-white/92 backdrop-blur-2xl border border-white/40 shadow-glass-light rounded-2xl;
   }
 
   .glass-dark {
     @apply bg-slate-900/80 backdrop-blur-2xl border border-white/20 shadow-glass-dark rounded-2xl text-white;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
   }
 
   .glass-luminous {
-    @apply bg-white/95 backdrop-blur-3xl border border-white/50 shadow-luminous rounded-3xl;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+    @apply bg-white/95 backdrop-blur-3xl border border-white/50 shadow-glass-luminous rounded-3xl;
   }
 
   .glass-dark-nav {
-    @apply bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-glass-dark rounded-2xl;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    @apply bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-glass-dark-nav rounded-2xl;
   }
 
   /* Global Typography on Background */

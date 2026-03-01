@@ -9,6 +9,27 @@ export const ClarifyInputSchema = z.object({
     followup_answer: z.string().optional(),
 });
 
+export const ClarifyRefineInputSchema = z.object({
+    mode: ClarityModeSchema,
+    text: z.string().min(1),
+    refining_answers: z.tuple([z.string(), z.string(), z.string()]),
+    extra_context: z.string().optional(),
+    prior_output: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const CommunicateRefineInputSchema = z.object({
+    message: z.string().min(1),
+    contexts: z.array(z.enum(["evaluative", "technical", "persuasive", "personal"])),
+    intent: z.enum(["inform", "persuade", "explain", "apologise"]),
+    options: z.object({
+        preserveMeaning: z.boolean(),
+        concise: z.boolean(),
+        formal: z.boolean(),
+    }),
+    refining_answers: z.tuple([z.string(), z.string(), z.string()]),
+    extra_context: z.string().optional(),
+});
+
 // --- Mode Specific Output Schemas ---
 
 // Base fields shared by all modes
@@ -68,7 +89,8 @@ export const PrepOutputSchema = z.object({
 export const ClarifyOutputSchema = z.object({
     problem_type: ClarityModeSchema,
     core_issue: z.string(),
-    one_sharp_question: z.string(),
+    one_sharp_question: z.string().optional(), // kept for backward compat
+    refining_questions: z.array(z.string()).length(3).optional(),
     // Common optional fields
     hidden_assumptions: z.array(z.string()).optional(),
     tradeoffs: z.array(z.string()).optional(),
@@ -84,7 +106,7 @@ export const ClarifyOutputSchema = z.object({
     key_points: z.array(z.string()).optional(),
     structure_outline: z.object({
         opening: z.string(),
-        body: z.union([z.string(), z.array(z.string())]), // Accept both for flexibility
+        body: z.union([z.string(), z.array(z.string())]),
         close: z.string()
     }).optional(),
     likely_questions_or_objections: z.array(z.string()).optional(),
@@ -117,10 +139,12 @@ export const CommunicateOutputSchema = z.object({
         key_changes: z.array(z.string()).min(2).max(5),
         tone: z.string(),
     })),
-    refining_question: z.string(),
+    refining_questions: z.array(z.string()).length(3),
 });
 
 export type ClarifyInput = z.infer<typeof ClarifyInputSchema>;
 export type ClarifyOutput = z.infer<typeof ClarifyOutputSchema>;
+export type ClarifyRefineInput = z.infer<typeof ClarifyRefineInputSchema>;
 export type CommunicateInput = z.infer<typeof CommunicateInputSchema>;
 export type CommunicateOutput = z.infer<typeof CommunicateOutputSchema>;
+export type CommunicateRefineInput = z.infer<typeof CommunicateRefineInputSchema>;

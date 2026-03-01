@@ -6,6 +6,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import ClarityResults from "@/components/ClarityCard";
 import ResponsiveLayout from "@/components/ResponsiveLayout";
 import CollapsibleSection from "@/components/CollapsibleSection";
+import RefinementFlow from "@/components/RefinementFlow";
 import { stableHash, getCachedResult, setCachedResult, clearExpiredCache } from "@/lib/aiCache";
 import { apiClient, APIError } from "@/lib/api-client";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -64,29 +65,26 @@ export default function ClarityPage() {
     const [inputText, setInputText] = useLocalStorage<string>("clarity_input", "");
     const [mode, setMode] = useLocalStorage<ClarityMode>("clarity_mode", "overwhelm");
     const [storedData, setStoredData] = useLocalStorage<ClarityStoredData | null>("clarity_stored_data", null);
-    const [followupAnswer, setFollowupAnswer] = useLocalStorage<string>("clarity_followup", "");
 
     const [clarityData, setClarityData] = useState<ClarifyOutput | null>(null);
     const [lastExampleId, setLastExampleId] = useLocalStorage<string | null>("clarity_last_example_id", null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isRefining, setIsRefining] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [rateLimitInfo, setRateLimitInfo] = useState<RateLimitInfo | null>(null);
     const [retryStatus, setRetryStatus] = useState<{ attempt: number; maxRetries: number } | null>(null);
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+    // Increment to reset RefinementFlow key when regenerating
+    const [refinementKey, setRefinementKey] = useState(0);
 
     const [isClient, setIsClient] = useState(false);
     const hasHydrated = useRef(false);
     const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Compute current base request hash (excluding followup answer)
     const computeBaseHash = async (textToHash: string, modeToHash: ClarityMode) => {
-        return await stableHash({
-            mode: modeToHash,
-            text: textToHash
-        });
+        return await stableHash({ mode: modeToHash, text: textToHash });
     };
 
-    // Initial hydration ONLY on mount
     useEffect(() => {
         setIsClient(true);
         clearExpiredCache();
@@ -104,18 +102,6 @@ export default function ClarityPage() {
 
         restore();
     }, [inputText, mode, storedData]);
-
-    // Clear answer when inputs change
-    useEffect(() => {
-        if (!isClient || !clarityData || !storedData) return;
-        const validate = async () => {
-            const currentHash = await computeBaseHash(inputText, mode);
-            if (storedData.requestHash !== currentHash) {
-                setFollowupAnswer("");
-            }
-        };
-        validate();
-    }, [inputText, mode, isClient]);
 
     // Countdown timer for rate limit
     useEffect(() => {
@@ -135,19 +121,14 @@ export default function ClarityPage() {
         }
     }, [rateLimitInfo]);
 
-    const handleGenerate = async (isRefining = false) => {
+    const handleGenerate = async () => {
         if (!inputText.trim()) {
             setError("Please enter some thoughts first.");
             return;
         }
-
         if (isLoading) return;
 
-        const request = {
-            mode,
-            text: inputText,
-            followup_answer: isRefining ? followupAnswer || undefined : undefined
-        };
+        const request = { mode, text: inputText };
 
         setIsLoading(true);
         setError(null);
@@ -155,30 +136,25 @@ export default function ClarityPage() {
         setRetryStatus(null);
 
         try {
-            if (!isRefining) {
-                const cacheKey = await stableHash(request);
-                const cached = getCachedResult(cacheKey);
-                if (cached) {
-                    setClarityData(cached.data);
-                    const currentHash = await computeBaseHash(inputText, mode);
-                    setStoredData({ requestHash: currentHash, result: cached.data });
-                    setIsLoading(false);
-                    return;
-                }
+            const cacheKey = await stableHash(request);
+            const cached = getCachedResult(cacheKey);
+            if (cached) {
+                setClarityData(cached.data);
+                const currentHash = await computeBaseHash(inputText, mode);
+                setStoredData({ requestHash: currentHash, result: cached.data });
+                setRefinementKey(k => k + 1);
+                setIsLoading(false);
+                return;
             }
 
-            const data = await apiClient<ClarifyOutput>("/api/clarify", request, {
+            const data = await apiClient<ClarifyOutput>("/api/clarify", { action: "generate", ...request }, {
                 onRetry: (attempt, maxRetries) => setRetryStatus({ attempt, maxRetries })
             });
             const currentHash = await computeBaseHash(inputText, mode);
             setStoredData({ requestHash: currentHash, result: data });
             setClarityData(data);
-            setFollowupAnswer("");
-
-            if (!isRefining) {
-                const cacheKey = await stableHash(request);
-                setCachedResult(cacheKey, data);
-            }
+            setRefinementKey(k => k + 1);
+            setCachedResult(cacheKey, data);
         } catch (err: any) {
             if (err.errorType === "RATE_LIMIT") {
                 const retryAfter = err.retryAfterSeconds || 60;
@@ -192,11 +168,45 @@ export default function ClarityPage() {
         }
     };
 
+    const handleApplyRefinement = async (answers: [string, string, string], extraContext: string) => {
+        if (!clarityData || !inputText.trim()) return;
+
+        setIsRefining(true);
+        setError(null);
+
+        try {
+            const data = await apiClient<ClarifyOutput>("/api/clarify", {
+                action: "refine",
+                mode,
+                text: inputText,
+                refining_answers: answers,
+                extra_context: extraContext || undefined,
+                prior_output: clarityData,
+            }, {
+                onRetry: (attempt, maxRetries) => setRetryStatus({ attempt, maxRetries })
+            });
+            const currentHash = await computeBaseHash(inputText, mode);
+            setStoredData({ requestHash: currentHash, result: data });
+            setClarityData(data);
+        } catch (err: any) {
+            if (err.errorType === "RATE_LIMIT") {
+                const retryAfter = err.retryAfterSeconds || 60;
+                setRateLimitInfo({ retryAfterSeconds: retryAfter, countdown: retryAfter });
+                setError(err.message);
+            } else {
+                setError(err.message || "Failed to apply refinement");
+            }
+        } finally {
+            setIsRefining(false);
+            setRetryStatus(null);
+        }
+    };
+
     const clearSession = () => {
         setInputText("");
         setClarityData(null);
         setStoredData(null);
-        setFollowupAnswer("");
+        setRefinementKey(0);
         setIsResetModalOpen(false);
     };
 
@@ -208,8 +218,8 @@ export default function ClarityPage() {
         const randomExample = available[Math.floor(Math.random() * available.length)];
         setClarityData(null);
         setStoredData(null);
-        setFollowupAnswer("");
         setError(null);
+        setRefinementKey(0);
         setInputText(randomExample.inputText);
         setMode(randomExample.mode);
         setLastExampleId(randomExample.id);
@@ -239,7 +249,7 @@ export default function ClarityPage() {
                                     { id: "decision" as ClarityMode, label: "Decision", icon: "⚖️" },
                                     { id: "plan" as ClarityMode, label: "Plan", icon: "📋" },
                                     { id: "overwhelm" as ClarityMode, label: "Overwhelm", icon: "🌊" },
-                                    { id: "message_prep" as ClarityMode, label: "Prep", icon: "🎯" },
+                                    { id: "message_prep" as ClarityMode, label: "Message Prep", icon: "🎯" },
                                 ].map((m) => (
                                     <button
                                         key={m.id}
@@ -283,7 +293,7 @@ export default function ClarityPage() {
                             { id: "decision" as ClarityMode, label: "Decision", icon: "⚖️", desc: "Compare" },
                             { id: "plan" as ClarityMode, label: "Plan", icon: "📋", desc: "Execution" },
                             { id: "overwhelm" as ClarityMode, label: "Overwhelm", icon: "🌊", desc: "Triage" },
-                            { id: "message_prep" as ClarityMode, label: "Prep", icon: "🎯", desc: "Strategy" },
+                            { id: "message_prep" as ClarityMode, label: "Message Prep", icon: "🎯", desc: "Strategy" },
                         ].map((m) => (
                             <button
                                 key={m.id}
@@ -325,8 +335,8 @@ export default function ClarityPage() {
                     </div>
                 )}
                 <button
-                    onClick={() => handleGenerate(false)}
-                    disabled={isLoading || !!rateLimitInfo}
+                    onClick={handleGenerate}
+                    disabled={isLoading || isRefining || !!rateLimitInfo}
                     className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-3 active:scale-[0.98]"
                 >
                     {isLoading ? (
@@ -345,7 +355,7 @@ export default function ClarityPage() {
 
                 {error && !isLoading && !rateLimitInfo && (
                     <button
-                        onClick={() => handleGenerate(false)}
+                        onClick={handleGenerate}
                         className="w-full py-2 text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1 transition-colors"
                     >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -377,31 +387,17 @@ export default function ClarityPage() {
                 <>
                     <ClarityResults key={storedData?.requestHash} data={clarityData} />
 
-                    {/* Refining Question Card */}
-                    <div className="p-6 glass-light !bg-blue-50 !border-blue-400/40 rounded-2xl shadow-md space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-blue-700 text-white rounded-lg flex items-center justify-center text-sm shadow-md shadow-blue-500/20">🔍</div>
-                            <h3 className="font-black text-blue-950 uppercase tracking-widest text-[10px]">Want to go deeper?</h3>
-                        </div>
-                        <p className="text-base font-black text-blue-950 leading-relaxed italic">
-                            &quot;{clarityData.one_sharp_question}&quot;
-                        </p>
-                        <div className="space-y-3">
-                            <textarea
-                                value={followupAnswer}
-                                onChange={(e) => setFollowupAnswer(e.target.value)}
-                                placeholder="Answer this question or add more context..."
-                                className="w-full p-4 bg-white border-2 border-blue-200 rounded-xl text-base focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-blue-400 text-blue-950 font-bold"
-                            />
-                            <button
-                                onClick={() => handleGenerate(true)}
-                                disabled={isLoading || !followupAnswer.trim()}
-                                className="w-full py-3 bg-blue-600 text-white border border-blue-700 rounded-xl font-black hover:bg-blue-700 transition-all text-xs uppercase tracking-widest shadow-md disabled:bg-slate-300 disabled:opacity-50 active:scale-95"
-                            >
-                                {isLoading ? "Refining..." : "Refine Assessment"}
-                            </button>
-                        </div>
-                    </div>
+                    {/* 3-step Refinement Flow */}
+                    {clarityData.refining_questions && clarityData.refining_questions.length >= 3 && (
+                        <RefinementFlow
+                            key={refinementKey}
+                            questions={clarityData.refining_questions}
+                            onApply={handleApplyRefinement}
+                            onReset={() => { }}
+                            isLoading={isRefining}
+                            themeColor="blue"
+                        />
+                    )}
                 </>
             ) : (
                 <div className="h-[400px] flex flex-col items-center justify-center text-center p-8 glass-light !bg-white/10 !border-dashed !border-white/20">
