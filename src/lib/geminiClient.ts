@@ -1,7 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 
-const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.0-flash-exp";
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.0-flash-lite";
+const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || "gemini-3-flash-preview";
 const DEBUG_AI = process.env.DEBUG_AI === "true";
 
 export function getGenAI() {
@@ -106,36 +107,39 @@ export async function generateStructuredData<T>(
     responseSchema?: any // Native Gemini JSON schema
 ): Promise<T> {
     const ai = getGenAI();
-    const model = MODEL_NAME;
-    const maxAttempts = 3;
-    let attempts = 0;
 
-    while (attempts < maxAttempts) {
-        attempts++;
-        try {
-            const result = await executeGeneration(ai, model, userPrompt, systemPrompt, responseSchema);
-            return validateAndParse(result, schema, schemaName);
-        } catch (error: any) {
-            const isRetryable = isRateLimitError(error) ||
-                error.message?.includes("timed out") ||
-                error.message?.includes("503") ||
-                error.message?.includes("504");
+    // Attempt 1: primary model
+    try {
+        const result = await executeGeneration(ai, MODEL_NAME, userPrompt, systemPrompt, responseSchema);
+        return validateAndParse(result, schema, schemaName);
+    } catch (primaryError: any) {
+        const isRetryable = isRateLimitError(primaryError) ||
+            primaryError.message?.includes("timed out") ||
+            primaryError.message?.includes("503") ||
+            primaryError.message?.includes("504");
 
-            if (isRetryable && attempts < maxAttempts) {
-                const delayMs = 2000 * attempts; // Simple backoff for server-side
-                console.warn(`[AI RETRY] ${schemaName} failed (attempt ${attempts}/${maxAttempts}). Retrying in ${delayMs}ms... Error: ${error.message}`);
-                await new Promise(resolve => setTimeout(resolve, delayMs));
-                continue;
-            }
-
+        if (!isRetryable) {
             if (DEBUG_AI) {
-                console.error(`\n[DEBUG_AI] Generation failed for ${schemaName} after ${attempts} attempts`);
-                console.error(`Error: ${error.message}`);
+                console.error(`\n[DEBUG_AI] Non-retryable error for ${schemaName}: ${primaryError.message}`);
             }
-            throw error;
+            throw primaryError;
         }
+
+        console.warn(`[AI FALLBACK] ${schemaName} failed on ${MODEL_NAME}. Trying fallback model ${FALLBACK_MODEL}... Error: ${primaryError.message}`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
-    throw new Error(`Failed to generate ${schemaName} after ${maxAttempts} attempts`);
+
+    // Attempt 2: fallback model
+    try {
+        const result = await executeGeneration(ai, FALLBACK_MODEL, userPrompt, systemPrompt, responseSchema);
+        return validateAndParse(result, schema, schemaName);
+    } catch (fallbackError: any) {
+        if (DEBUG_AI) {
+            console.error(`\n[DEBUG_AI] Both models failed for ${schemaName}`);
+            console.error(`Fallback error: ${fallbackError.message}`);
+        }
+        throw fallbackError;
+    }
 }
 
 function validateAndParse<T>(json: any, schema: z.ZodType<T>, schemaName: string): T {
@@ -157,12 +161,12 @@ function validateAndParse<T>(json: any, schema: z.ZodType<T>, schemaName: string
     return parseResult.data;
 }
 
-async function executeGeneration(ai: GoogleGenAI, model: string, prompt: string, systemPrompt: string, responseSchema?: any) {
+async function executeGeneration(ai: GoogleGenAI, model: string, prompt: string, systemPrompt: string, responseSchema?: any): Promise<any> {
     const finalSystemPrompt = `${systemPrompt}\n\nCRITICAL: Output ONLY valid JSON.`;
 
-    // Server-side deterministic timeout (50s)
+    // Server-side deterministic timeout (20s)
     const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("AI generation timed out on server (50s)")), 50000);
+        setTimeout(() => reject(new Error("AI generation timed out on server (20s)")), 20000);
     });
 
     try {
