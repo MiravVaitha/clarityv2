@@ -72,17 +72,29 @@ export async function POST(request: NextRequest) {
             console.log('\n[Bear API] AI response:', JSON.stringify(aiResponse, null, 2));
         }
 
-        // 6. Save Bear's response message
+        // 6. Save Bear's response message.
+        // For card responses, embed the card data in message content as JSON so
+        // past sessions can be fully reconstructed without a clarity_cards join.
+        const bearMessageContent =
+            aiResponse.response_type === 'card' && aiResponse.card
+                ? JSON.stringify({
+                    __bear_card: true,
+                    intro: aiResponse.message,
+                    card_type: aiResponse.card_type,
+                    card: aiResponse.card,
+                })
+                : aiResponse.message;
+
         const { error: bearMsgError } = await supabase.from('messages').insert({
             session_id: activeSessionId,
             role: 'bear',
-            content: aiResponse.message,
+            content: bearMessageContent,
         });
         if (bearMsgError) {
             console.error('[Bear API] Failed to save Bear message:', bearMsgError);
         }
 
-        // 7. If a card was generated, save it to clarity_cards
+        // 7. If a card was generated, also save to clarity_cards for queryability
         if (aiResponse.response_type === 'card' && aiResponse.card) {
             const { error: cardError } = await supabase.from('clarity_cards').insert({
                 session_id: activeSessionId,
