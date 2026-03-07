@@ -254,7 +254,7 @@ export default function InlineClarityCard({ cardType, card, introMessage }: Inli
                         boxShadow: "0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(251,191,36,0.07)",
                         backdropFilter: "blur(16px)",
                         padding: "20px 22px 18px",
-                        minHeight: "240px",
+                        height: "320px",
                         display: "flex",
                         flexDirection: "column",
                     }}
@@ -295,10 +295,15 @@ export default function InlineClarityCard({ cardType, card, introMessage }: Inli
                         {section.title}
                     </div>
 
-                    {/* Section content with slide animation */}
+                    {/* Section content — fixed height, scrolls internally if section is long */}
                     <div
                         key={slideKey}
-                        style={{ flex: 1, animation: "card-slide-in 0.28s ease-out both" }}
+                        className="no-scrollbar"
+                        style={{
+                            flex: 1,
+                            overflowY: "auto",
+                            animation: "card-slide-in 0.28s ease-out both",
+                        }}
                     >
                         <SectionContent section={section} />
                     </div>
