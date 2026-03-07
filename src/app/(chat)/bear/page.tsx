@@ -153,7 +153,7 @@ export default function BearPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    session_id: sessionId,
+                    ...(sessionId ? { session_id: sessionId } : {}),
                     message: text,
                     history,
                 }),
