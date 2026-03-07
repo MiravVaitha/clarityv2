@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { ClarifyOutput } from "@/lib/schemas";
 
 interface InlineClarityCardProps {
@@ -8,284 +9,374 @@ interface InlineClarityCardProps {
     introMessage: string;
 }
 
-const CARD_LABELS: Record<string, string> = {
+const CARD_TYPE_LABELS: Record<string, string> = {
     decision: "Decision",
     plan: "Plan",
     overwhelm: "Overwhelm",
     message_prep: "Message Prep",
 };
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-    return (
-        <div className="mb-4">
-            <div
-                style={{
-                    fontSize: "0.7rem",
-                    fontWeight: 700,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    color: "rgba(251,191,36,0.7)",
-                    marginBottom: "6px",
-                }}
-            >
-                {title}
+// ── Section types ───────────────────────────────────────────────────
+
+type Section =
+    | { kind: "text"; title: string; body: string }
+    | { kind: "list"; title: string; items: string[] }
+    | { kind: "options"; title: string; options: NonNullable<ClarifyOutput["options"]> }
+    | { kind: "outline"; title: string; outline: NonNullable<ClarifyOutput["structure_outline"]> };
+
+function buildSections(cardType: string, card: ClarifyOutput): Section[] {
+    const sections: Section[] = [];
+
+    // Core issue — always first
+    sections.push({ kind: "text", title: "What's going on", body: card.core_issue });
+
+    // Sharp question — always second
+    if (card.one_sharp_question) {
+        sections.push({ kind: "text", title: "The question to sit with", body: card.one_sharp_question });
+    }
+
+    if (cardType === "decision") {
+        if (card.options?.length) {
+            sections.push({ kind: "options", title: "Your options", options: card.options });
+        }
+        if (card.decision_levers?.length) {
+            sections.push({ kind: "list", title: "What matters most", items: card.decision_levers });
+        }
+        if (card.tradeoffs?.length) {
+            sections.push({ kind: "list", title: "Tradeoffs", items: card.tradeoffs });
+        }
+        if (card.next_steps_14_days?.length) {
+            sections.push({ kind: "list", title: "Next 14 days", items: card.next_steps_14_days });
+        }
+    }
+
+    if (cardType === "plan") {
+        if (card.hidden_assumptions?.length) {
+            sections.push({ kind: "list", title: "Key milestones", items: card.hidden_assumptions });
+        }
+        if (card.next_steps_14_days?.length) {
+            sections.push({ kind: "list", title: "Next 14 days", items: card.next_steps_14_days });
+        }
+        if (card.tradeoffs?.length) {
+            sections.push({ kind: "list", title: "Risks to watch", items: card.tradeoffs });
+        }
+        if (card.decision_levers?.length) {
+            sections.push({ kind: "list", title: "Success looks like", items: card.decision_levers });
+        }
+    }
+
+    if (cardType === "overwhelm") {
+        if (card.top_3_priorities_today?.length) {
+            sections.push({ kind: "list", title: "Focus on today", items: card.top_3_priorities_today });
+        }
+        if (card.top_3_defer_or_ignore?.length) {
+            sections.push({ kind: "list", title: "Defer or drop", items: card.top_3_defer_or_ignore });
+        }
+        if (card.next_10_minutes) {
+            sections.push({ kind: "text", title: "Do this right now", body: card.next_10_minutes });
+        }
+        if (card.next_24_hours) {
+            sections.push({ kind: "text", title: "By tomorrow", body: card.next_24_hours });
+        }
+        if (card.constraint_or_boundary) {
+            sections.push({ kind: "text", title: "Protect this", body: card.constraint_or_boundary });
+        }
+    }
+
+    if (cardType === "message_prep") {
+        if (card.purpose_outcome) {
+            sections.push({ kind: "text", title: "Goal", body: card.purpose_outcome });
+        }
+        if (card.key_points?.length) {
+            sections.push({ kind: "list", title: "Key points", items: card.key_points });
+        }
+        if (card.structure_outline) {
+            sections.push({ kind: "outline", title: "Structure", outline: card.structure_outline });
+        }
+        if (card.likely_questions_or_objections?.length) {
+            sections.push({ kind: "list", title: "Likely questions", items: card.likely_questions_or_objections });
+        }
+        if (card.rehearsal_checklist?.length) {
+            sections.push({ kind: "list", title: "Prepare", items: card.rehearsal_checklist });
+        }
+    }
+
+    if (card.refining_questions?.length) {
+        sections.push({ kind: "list", title: "To go deeper", items: card.refining_questions });
+    }
+
+    return sections;
+}
+
+// ── Section renderers ───────────────────────────────────────────────
+
+function SectionContent({ section }: { section: Section }) {
+    const bodyStyle: React.CSSProperties = {
+        color: "rgba(215,238,222,0.92)",
+        fontSize: "1rem",
+        lineHeight: "1.65",
+        margin: 0,
+    };
+
+    if (section.kind === "text") {
+        return <p style={bodyStyle}>{section.body}</p>;
+    }
+
+    if (section.kind === "list") {
+        return (
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
+                {section.items.map((item, i) => (
+                    <li key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                        <span style={{ color: "rgba(251,191,36,0.6)", fontWeight: 700, flexShrink: 0, marginTop: "2px" }}>—</span>
+                        <span style={{ ...bodyStyle, fontSize: "0.9375rem" }}>{item}</span>
+                    </li>
+                ))}
+            </ul>
+        );
+    }
+
+    if (section.kind === "options") {
+        return (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {section.options.map((opt, i) => (
+                    <div
+                        key={i}
+                        style={{
+                            background: "rgba(255,255,255,0.04)",
+                            borderRadius: "10px",
+                            padding: "12px 14px",
+                            border: "1px solid rgba(255,255,255,0.07)",
+                        }}
+                    >
+                        <div style={{ fontWeight: 600, color: "rgba(225,245,230,0.95)", marginBottom: "4px", fontSize: "0.9375rem" }}>
+                            {opt.option}
+                        </div>
+                        <div style={{ color: "rgba(180,210,190,0.75)", fontSize: "0.85rem", lineHeight: "1.5" }}>
+                            {opt.why}
+                        </div>
+                        {opt.when_it_wins && (
+                            <div style={{ color: "rgba(251,191,36,0.6)", fontSize: "0.8rem", fontStyle: "italic", marginTop: "4px" }}>
+                                Best when: {opt.when_it_wins}
+                            </div>
+                        )}
+                    </div>
+                ))}
             </div>
-            {children}
-        </div>
-    );
+        );
+    }
+
+    if (section.kind === "outline") {
+        const { outline } = section;
+        const bodyItems = Array.isArray(outline.body) ? outline.body : [outline.body];
+        return (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {[
+                    { label: "Open", text: outline.opening },
+                    ...bodyItems.map((b) => ({ label: "Body", text: b })),
+                    { label: "Close", text: outline.close },
+                ].map((row, i) => (
+                    <div key={i} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                        <span style={{ color: "rgba(251,191,36,0.65)", fontWeight: 700, fontSize: "0.8rem", minWidth: "42px", paddingTop: "2px" }}>
+                            {row.label}
+                        </span>
+                        <span style={{ color: "rgba(210,235,215,0.85)", fontSize: "0.9rem", lineHeight: "1.55" }}>{row.text}</span>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    return null;
 }
 
-function BulletList({ items }: { items: string[] }) {
-    return (
-        <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-            {items.map((item, i) => (
-                <li
-                    key={i}
-                    style={{
-                        display: "flex",
-                        gap: "8px",
-                        alignItems: "flex-start",
-                        marginBottom: "4px",
-                        color: "rgba(210,235,215,0.88)",
-                        fontSize: "0.875rem",
-                        lineHeight: "1.5",
-                    }}
-                >
-                    <span style={{ color: "rgba(251,191,36,0.55)", marginTop: "2px", flexShrink: 0 }}>•</span>
-                    {item}
-                </li>
-            ))}
-        </ul>
-    );
-}
-
-function Prose({ text }: { text: string }) {
-    return (
-        <p
-            style={{
-                margin: 0,
-                color: "rgba(210,235,215,0.88)",
-                fontSize: "0.875rem",
-                lineHeight: "1.6",
-            }}
-        >
-            {text}
-        </p>
-    );
-}
+// ── Main component ──────────────────────────────────────────────────
 
 export default function InlineClarityCard({ cardType, card, introMessage }: InlineClarityCardProps) {
+    const sections = buildSections(cardType, card);
+    const [current, setCurrent] = useState(0);
+    const [slideKey, setSlideKey] = useState(0);
+
+    const goTo = (index: number) => {
+        setCurrent(index);
+        setSlideKey((k) => k + 1);
+    };
+
+    const section = sections[current];
+    const label = CARD_TYPE_LABELS[cardType] ?? cardType;
+
     return (
-        <div
-            className="w-full"
-            style={{ animation: "card-appear 0.5s cubic-bezier(0.22,1,0.36,1) both" }}
-        >
+        <div style={{ animation: "card-appear 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
             {/* Bear intro message */}
             <div
                 style={{
-                    color: "rgba(220,240,225,0.88)",
+                    color: "rgba(215,238,222,0.85)",
                     fontSize: "0.9375rem",
                     lineHeight: "1.6",
-                    marginBottom: "12px",
-                    paddingLeft: "4px",
+                    marginBottom: "14px",
+                    paddingLeft: "2px",
                 }}
             >
                 {introMessage}
             </div>
 
-            {/* Card */}
-            <div
-                style={{
-                    background: "rgba(8,22,10,0.82)",
-                    border: "1px solid rgba(251,191,36,0.2)",
-                    borderRadius: "16px",
-                    padding: "20px 24px",
-                    backdropFilter: "blur(12px)",
-                    maxWidth: "520px",
-                    boxShadow: "0 4px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(251,191,36,0.08)",
-                }}
-            >
-                {/* Card type badge */}
-                <div style={{ marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span
-                        style={{
-                            display: "inline-block",
-                            padding: "3px 10px",
-                            borderRadius: "99px",
-                            background: "rgba(251,191,36,0.15)",
-                            border: "1px solid rgba(251,191,36,0.3)",
-                            fontSize: "0.7rem",
-                            fontWeight: 700,
-                            letterSpacing: "0.1em",
-                            textTransform: "uppercase",
-                            color: "rgba(251,191,36,0.9)",
-                        }}
-                    >
-                        {CARD_LABELS[cardType] ?? cardType}
-                    </span>
-                    <span
-                        style={{
-                            flex: 1,
-                            height: "1px",
-                            background: "rgba(251,191,36,0.12)",
-                        }}
-                    />
-                </div>
+            {/* Card stack container */}
+            <div style={{ position: "relative", maxWidth: "460px" }}>
+                {/* Stack layer 2 (furthest back) */}
+                <div
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "rgba(8,22,10,0.55)",
+                        borderRadius: "16px",
+                        border: "1px solid rgba(251,191,36,0.08)",
+                        transform: "translateY(8px) translateX(6px) rotate(1.5deg)",
+                    }}
+                />
+                {/* Stack layer 1 */}
+                <div
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "rgba(8,22,10,0.7)",
+                        borderRadius: "16px",
+                        border: "1px solid rgba(251,191,36,0.12)",
+                        transform: "translateY(4px) translateX(3px) rotate(0.7deg)",
+                    }}
+                />
 
-                {/* Core issue */}
-                <Section title="What's going on">
-                    <Prose text={card.core_issue} />
-                </Section>
-
-                {/* Sharp question */}
-                {card.one_sharp_question && (
-                    <Section title="The key question">
-                        <div
+                {/* Main card */}
+                <div
+                    style={{
+                        position: "relative",
+                        background: "rgba(10,26,12,0.92)",
+                        borderRadius: "16px",
+                        border: "1px solid rgba(251,191,36,0.22)",
+                        boxShadow: "0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(251,191,36,0.07)",
+                        backdropFilter: "blur(16px)",
+                        padding: "20px 22px 18px",
+                        minHeight: "240px",
+                        display: "flex",
+                        flexDirection: "column",
+                    }}
+                >
+                    {/* Top row: badge + progress */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+                        <span
                             style={{
-                                fontStyle: "italic",
+                                padding: "3px 10px",
+                                borderRadius: "99px",
+                                background: "rgba(251,191,36,0.13)",
+                                border: "1px solid rgba(251,191,36,0.28)",
+                                fontSize: "0.68rem",
+                                fontWeight: 700,
+                                letterSpacing: "0.1em",
+                                textTransform: "uppercase",
                                 color: "rgba(251,191,36,0.85)",
-                                fontSize: "0.9375rem",
-                                lineHeight: "1.5",
                             }}
                         >
-                            {card.one_sharp_question}
+                            {label}
+                        </span>
+                        <span style={{ fontSize: "0.75rem", color: "rgba(150,180,160,0.55)", fontVariantNumeric: "tabular-nums" }}>
+                            {current + 1} / {sections.length}
+                        </span>
+                    </div>
+
+                    {/* Section title */}
+                    <div
+                        style={{
+                            fontSize: "0.68rem",
+                            fontWeight: 700,
+                            letterSpacing: "0.12em",
+                            textTransform: "uppercase",
+                            color: "rgba(251,191,36,0.6)",
+                            marginBottom: "10px",
+                        }}
+                    >
+                        {section.title}
+                    </div>
+
+                    {/* Section content with slide animation */}
+                    <div
+                        key={slideKey}
+                        style={{ flex: 1, animation: "card-slide-in 0.28s ease-out both" }}
+                    >
+                        <SectionContent section={section} />
+                    </div>
+
+                    {/* Navigation */}
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginTop: "20px",
+                            paddingTop: "14px",
+                            borderTop: "1px solid rgba(255,255,255,0.06)",
+                        }}
+                    >
+                        <button
+                            onClick={() => goTo(current - 1)}
+                            disabled={current === 0}
+                            style={{
+                                background: "none",
+                                border: "1px solid rgba(255,255,255,0.1)",
+                                borderRadius: "8px",
+                                padding: "6px 14px",
+                                color: current === 0 ? "rgba(255,255,255,0.18)" : "rgba(200,225,210,0.75)",
+                                cursor: current === 0 ? "not-allowed" : "pointer",
+                                fontSize: "0.875rem",
+                                transition: "all 0.15s",
+                            }}
+                        >
+                            ← Back
+                        </button>
+
+                        {/* Progress dots */}
+                        <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                            {sections.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => goTo(i)}
+                                    style={{
+                                        width: i === current ? "16px" : "6px",
+                                        height: "6px",
+                                        borderRadius: "3px",
+                                        background: i === current
+                                            ? "rgba(251,191,36,0.85)"
+                                            : "rgba(255,255,255,0.2)",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        padding: 0,
+                                        transition: "all 0.2s",
+                                    }}
+                                    aria-label={`Go to section ${i + 1}`}
+                                />
+                            ))}
                         </div>
-                    </Section>
-                )}
 
-                {/* ── DECISION FIELDS ── */}
-                {cardType === "decision" && (
-                    <>
-                        {card.options && card.options.length > 0 && (
-                            <Section title="Options">
-                                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                                    {card.options.map((opt, i) => (
-                                        <div
-                                            key={i}
-                                            style={{
-                                                background: "rgba(255,255,255,0.04)",
-                                                borderRadius: "10px",
-                                                padding: "10px 14px",
-                                                border: "1px solid rgba(255,255,255,0.06)",
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    fontWeight: 600,
-                                                    color: "rgba(220,240,225,0.95)",
-                                                    fontSize: "0.875rem",
-                                                    marginBottom: "4px",
-                                                }}
-                                            >
-                                                {opt.option}
-                                            </div>
-                                            <div
-                                                style={{
-                                                    color: "rgba(180,210,190,0.75)",
-                                                    fontSize: "0.8125rem",
-                                                    lineHeight: "1.5",
-                                                    marginBottom: opt.when_it_wins ? "4px" : 0,
-                                                }}
-                                            >
-                                                {opt.why}
-                                            </div>
-                                            {opt.when_it_wins && (
-                                                <div
-                                                    style={{
-                                                        color: "rgba(251,191,36,0.6)",
-                                                        fontSize: "0.8rem",
-                                                        fontStyle: "italic",
-                                                    }}
-                                                >
-                                                    Best when: {opt.when_it_wins}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </Section>
-                        )}
-                        {card.decision_levers && <Section title="What matters most"><BulletList items={card.decision_levers} /></Section>}
-                        {card.tradeoffs && <Section title="Tradeoffs"><BulletList items={card.tradeoffs} /></Section>}
-                        {card.next_steps_14_days && <Section title="Next 14 days"><BulletList items={card.next_steps_14_days} /></Section>}
-                    </>
-                )}
-
-                {/* ── PLAN FIELDS ── */}
-                {cardType === "plan" && (
-                    <>
-                        {card.hidden_assumptions && <Section title="Key milestones"><BulletList items={card.hidden_assumptions} /></Section>}
-                        {card.next_steps_14_days && <Section title="Next 14 days"><BulletList items={card.next_steps_14_days} /></Section>}
-                        {card.tradeoffs && <Section title="Risks"><BulletList items={card.tradeoffs} /></Section>}
-                        {card.decision_levers && <Section title="Success looks like"><BulletList items={card.decision_levers} /></Section>}
-                    </>
-                )}
-
-                {/* ── OVERWHELM FIELDS ── */}
-                {cardType === "overwhelm" && (
-                    <>
-                        {card.top_3_priorities_today && <Section title="Focus on today"><BulletList items={card.top_3_priorities_today} /></Section>}
-                        {card.top_3_defer_or_ignore && <Section title="Defer or drop"><BulletList items={card.top_3_defer_or_ignore} /></Section>}
-                        {card.next_10_minutes && (
-                            <Section title="Right now">
-                                <div
-                                    style={{
-                                        background: "rgba(251,191,36,0.1)",
-                                        borderRadius: "8px",
-                                        padding: "8px 12px",
-                                        color: "rgba(251,191,36,0.9)",
-                                        fontSize: "0.875rem",
-                                        fontWeight: 600,
-                                    }}
-                                >
-                                    {card.next_10_minutes}
-                                </div>
-                            </Section>
-                        )}
-                        {card.next_24_hours && <Section title="By tomorrow"><Prose text={card.next_24_hours} /></Section>}
-                        {card.constraint_or_boundary && <Section title="Protect this"><Prose text={card.constraint_or_boundary} /></Section>}
-                    </>
-                )}
-
-                {/* ── MESSAGE PREP FIELDS ── */}
-                {cardType === "message_prep" && (
-                    <>
-                        {card.purpose_outcome && <Section title="Goal"><Prose text={card.purpose_outcome} /></Section>}
-                        {card.key_points && <Section title="Key points"><BulletList items={card.key_points} /></Section>}
-                        {card.structure_outline && (
-                            <Section title="Structure">
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: "6px",
-                                        fontSize: "0.8125rem",
-                                        color: "rgba(200,225,210,0.82)",
-                                        lineHeight: "1.5",
-                                    }}
-                                >
-                                    <div><span style={{ color: "rgba(251,191,36,0.6)", fontWeight: 600 }}>Open — </span>{card.structure_outline.opening}</div>
-                                    {Array.isArray(card.structure_outline.body)
-                                        ? card.structure_outline.body.map((b, i) => (
-                                            <div key={i}><span style={{ color: "rgba(251,191,36,0.6)", fontWeight: 600 }}>Body — </span>{b}</div>
-                                        ))
-                                        : <div><span style={{ color: "rgba(251,191,36,0.6)", fontWeight: 600 }}>Body — </span>{card.structure_outline.body}</div>
-                                    }
-                                    <div><span style={{ color: "rgba(251,191,36,0.6)", fontWeight: 600 }}>Close — </span>{card.structure_outline.close}</div>
-                                </div>
-                            </Section>
-                        )}
-                        {card.likely_questions_or_objections && <Section title="Likely questions"><BulletList items={card.likely_questions_or_objections} /></Section>}
-                        {card.rehearsal_checklist && <Section title="Prepare"><BulletList items={card.rehearsal_checklist} /></Section>}
-                    </>
-                )}
-
-                {/* Refining questions — shown for all card types */}
-                {card.refining_questions && card.refining_questions.length > 0 && (
-                    <Section title="To refine this">
-                        <BulletList items={card.refining_questions} />
-                    </Section>
-                )}
+                        <button
+                            onClick={() => goTo(current + 1)}
+                            disabled={current === sections.length - 1}
+                            style={{
+                                background: current === sections.length - 1
+                                    ? "rgba(251,191,36,0.1)"
+                                    : "rgba(251,191,36,0.85)",
+                                border: "none",
+                                borderRadius: "8px",
+                                padding: "6px 14px",
+                                color: current === sections.length - 1
+                                    ? "rgba(251,191,36,0.35)"
+                                    : "#1a0f06",
+                                cursor: current === sections.length - 1 ? "not-allowed" : "pointer",
+                                fontSize: "0.875rem",
+                                fontWeight: 600,
+                                transition: "all 0.15s",
+                            }}
+                        >
+                            Next →
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

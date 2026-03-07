@@ -1,7 +1,7 @@
 "use client";
 
 interface BearCharacterProps {
-    state?: "idle" | "thinking";
+    state?: "idle" | "thinking" | "talking";
     size?: number;
 }
 
@@ -34,7 +34,10 @@ export default function BearCharacter({ state = "idle", size = 180 }: BearCharac
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
                 style={{
-                    animation: state === "idle" ? "bear-breathe 4s ease-in-out infinite" : "none",
+                    animation:
+                        state === "idle"    ? "bear-breathe 4s ease-in-out infinite" :
+                        state === "talking" ? "bear-talk 0.6s ease-in-out 3" :
+                        "none",
                     filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.55))",
                 }}
             >
