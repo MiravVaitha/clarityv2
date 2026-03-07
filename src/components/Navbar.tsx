@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import BrandLogo from "./BrandLogo";
 import ConfirmationModal from "./ConfirmationModal";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -15,9 +16,11 @@ export default function Navbar() {
         setIsLogoutModalOpen(true);
     };
 
-    const confirmLogout = () => {
+    const confirmLogout = async () => {
         setIsLogoutModalOpen(false);
-        router.push("/");
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.push("/login");
     };
 
     // Determine theme based on route
