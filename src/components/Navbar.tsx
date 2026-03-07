@@ -58,13 +58,24 @@ export default function Navbar() {
                     ))}
                 </div>
 
-                <button
-                    onClick={handleLogout}
-                    className={`text-sm font-bold transition-all hover:scale-105 ${isDarkTheme ? "text-white/70 hover:text-red-400" : "text-slate-600 hover:text-red-500"
-                        }`}
-                >
-                    Logout
-                </button>
+                <div className="flex items-center gap-6">
+                    <Link
+                        href="/account"
+                        className={`text-sm tracking-tight transition-all hover:scale-105 ${pathname === "/account"
+                                ? `${activeTextClass} underline ${underlineClass} underline-offset-4`
+                                : textBaseClass
+                            }`}
+                    >
+                        Account
+                    </Link>
+                    <button
+                        onClick={handleLogout}
+                        className={`text-sm font-bold transition-all hover:scale-105 ${isDarkTheme ? "text-white/70 hover:text-red-400" : "text-slate-600 hover:text-red-500"
+                            }`}
+                    >
+                        Logout
+                    </button>
+                </div>
             </div>
 
             <ConfirmationModal
