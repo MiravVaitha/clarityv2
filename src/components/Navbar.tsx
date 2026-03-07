@@ -70,7 +70,7 @@ export default function Navbar() {
             <ConfirmationModal
                 isOpen={isLogoutModalOpen}
                 title="Log out?"
-                message="Are you sure you want to log out? Locally stored data will be preserved."
+                message="Are you sure you want to log out?"
                 confirmLabel="Log out"
                 onConfirm={confirmLogout}
                 onCancel={() => setIsLogoutModalOpen(false)}

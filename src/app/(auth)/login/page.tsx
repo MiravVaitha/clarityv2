@@ -34,7 +34,7 @@ export default function Login() {
                 router.refresh();
             }
         } else {
-            const { error } = await supabase.auth.signUp({
+            const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
@@ -43,7 +43,12 @@ export default function Login() {
             });
             if (error) {
                 setError(error.message);
+            } else if (data.session) {
+                // Email confirmation is disabled — signed in immediately
+                router.push("/home");
+                router.refresh();
             } else {
+                // Email confirmation is required
                 setMessage("Check your email to confirm your account, then sign in.");
                 setMode("signin");
             }
