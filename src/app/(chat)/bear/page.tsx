@@ -373,7 +373,6 @@ export default function BearPage() {
                                 display: "flex",
                                 flexDirection: "column",
                                 gap: "14px",
-                                maxWidth: "560px",
                                 width: "100%",
                             }}
                         >
