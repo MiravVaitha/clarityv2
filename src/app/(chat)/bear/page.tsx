@@ -65,6 +65,27 @@ function buildHistory(entries: ChatEntry[]): HistoryItem[] {
         } as HistoryItem));
 }
 
+// ── Hamburger icon ─────────────────────────────────────────────────
+
+function HamburgerLines({ color = "rgba(200,225,210,0.65)" }: { color?: string }) {
+    return (
+        <>
+            {[0, 1, 2].map((i) => (
+                <span
+                    key={i}
+                    style={{
+                        display: "block",
+                        width: "18px",
+                        height: "2px",
+                        borderRadius: "1px",
+                        background: color,
+                    }}
+                />
+            ))}
+        </>
+    );
+}
+
 // ── Component ──────────────────────────────────────────────────────
 
 export default function BearPage() {
@@ -78,6 +99,13 @@ export default function BearPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const supabase = createClient();
+
+    // ── Derived state ──────────────────────────────────────────────
+
+    const hasMessages = entries.length > 0;
+    const isSending = bearState === "thinking";
+    // Dim the woods when a card just landed — refocuses attention
+    const lastEntryIsCard = entries.length > 0 && entries[entries.length - 1].type === "card";
 
     // ── Load sessions ──────────────────────────────────────────────
 
@@ -127,8 +155,6 @@ export default function BearPage() {
 
     // ── Send message ───────────────────────────────────────────────
 
-    const isSending = bearState === "thinking";
-
     const sendMessage = useCallback(async () => {
         const text = input.trim();
         if (!text || isSending) return;
@@ -169,7 +195,7 @@ export default function BearPage() {
                 loadSessions();
             }
 
-            // Bear "talks" briefly before settling to idle
+            // Bear animates briefly when responding
             setBearState("talking");
             setTimeout(() => setBearState("idle"), 1800);
 
@@ -199,13 +225,24 @@ export default function BearPage() {
         }
     };
 
-    const hasMessages = entries.length > 0;
-
     // ── Render ─────────────────────────────────────────────────────
 
     return (
         <div className="relative h-screen overflow-hidden flex">
             <WoodsBackground />
+
+            {/* ── Background dim overlay — fades in when a card is active ── */}
+            <div
+                style={{
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: 1,
+                    background: "rgba(0,0,0,0.45)",
+                    opacity: lastEntryIsCard ? 1 : 0,
+                    transition: "opacity 0.7s ease",
+                    pointerEvents: "none",
+                }}
+            />
 
             <SessionSidebar
                 sessions={sessions}
@@ -216,21 +253,9 @@ export default function BearPage() {
                 onClose={() => setSidebarOpen(false)}
             />
 
-            {/* ── LEFT PANEL — Bear ── */}
-            <div
-                style={{
-                    width: "42%",
-                    position: "relative",
-                    zIndex: 10,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "16px",
-                    flexShrink: 0,
-                }}
-            >
-                {/* Sessions button (top-left) */}
+            {/* ── LEFT PANEL — Bear (hidden on mobile via CSS) ── */}
+            <div className="bear-left-panel">
+                {/* Sessions button — top-left of bear panel */}
                 <button
                     onClick={() => setSidebarOpen(true)}
                     aria-label="Open sessions"
@@ -249,24 +274,13 @@ export default function BearPage() {
                         backdropFilter: "blur(8px)",
                     }}
                 >
-                    {[0, 1, 2].map((i) => (
-                        <span
-                            key={i}
-                            style={{
-                                display: "block",
-                                width: "18px",
-                                height: "2px",
-                                borderRadius: "1px",
-                                background: "rgba(200,225,210,0.65)",
-                            }}
-                        />
-                    ))}
+                    <HamburgerLines />
                 </button>
 
                 {/* Bear character */}
                 <BearCharacter state={bearState} size={240} />
 
-                {/* Bear name label */}
+                {/* Bear name */}
                 <span
                     style={{
                         fontSize: "0.8rem",
@@ -299,6 +313,7 @@ export default function BearPage() {
             <div
                 style={{
                     flex: 1,
+                    minWidth: 0,
                     position: "relative",
                     zIndex: 10,
                     display: "flex",
@@ -311,14 +326,31 @@ export default function BearPage() {
                 {/* Top bar */}
                 <div
                     style={{
-                        padding: "14px 18px",
+                        padding: "14px 16px",
                         borderBottom: "1px solid rgba(255,255,255,0.05)",
                         flexShrink: 0,
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
+                        justifyContent: "space-between",
                     }}
                 >
+                    {/* Mobile-only hamburger — hidden on desktop via CSS */}
+                    <button
+                        className="bear-mobile-menu-btn"
+                        onClick={() => setSidebarOpen(true)}
+                        aria-label="Open sessions"
+                        style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            flexDirection: "column",
+                            gap: "4px",
+                            padding: "4px",
+                        }}
+                    >
+                        <HamburgerLines color="rgba(200,225,210,0.5)" />
+                    </button>
+
                     <span
                         style={{
                             fontSize: "0.8rem",
@@ -326,10 +358,15 @@ export default function BearPage() {
                             letterSpacing: "0.1em",
                             textTransform: "uppercase",
                             color: "rgba(210,235,215,0.4)",
+                            flex: 1,
+                            textAlign: "center",
                         }}
                     >
                         {sessionId ? "Session" : "New conversation"}
                     </span>
+
+                    {/* Right spacer — keeps title centred when mobile menu is shown */}
+                    <div className="bear-mobile-menu-btn" style={{ width: "26px", flexShrink: 0 }} />
                 </div>
 
                 {/* Messages area */}
@@ -392,6 +429,39 @@ export default function BearPage() {
                                     />
                                 );
                             })}
+
+                            {/* Mobile-only thinking indicator — bear panel is hidden on mobile */}
+                            {isSending && (
+                                <div
+                                    className="bear-mobile-thinking"
+                                    style={{
+                                        alignItems: "center",
+                                        gap: "8px",
+                                        padding: "6px 4px",
+                                        animation: "message-appear 0.3s ease-out both",
+                                    }}
+                                >
+                                    <span style={{ color: "rgba(200,225,210,0.45)", fontSize: "0.85rem", fontStyle: "italic" }}>
+                                        Bear is thinking
+                                    </span>
+                                    <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                                        {[0, 1, 2].map((i) => (
+                                            <div
+                                                key={i}
+                                                style={{
+                                                    width: "5px",
+                                                    height: "5px",
+                                                    borderRadius: "50%",
+                                                    background: "rgba(251,191,36,0.75)",
+                                                    animation: "think-bounce 1.4s ease-in-out infinite",
+                                                    animationDelay: `${i * 0.22}s`,
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div ref={messagesEndRef} />
                         </div>
                     )}

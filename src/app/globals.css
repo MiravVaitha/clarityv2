@@ -147,6 +147,37 @@
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* ── Bear page responsive layout ── */
+.bear-left-panel {
+  width: 42%;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+@media (max-width: 1023px) {
+  .bear-left-panel { width: 32%; }
+}
+@media (max-width: 767px) {
+  .bear-left-panel { display: none; }
+}
+
+/* Only visible on mobile — hamburger in chat top bar */
+.bear-mobile-menu-btn { display: none; }
+@media (max-width: 767px) {
+  .bear-mobile-menu-btn { display: flex; }
+}
+
+/* Only visible on mobile — thinking indicator inside chat */
+.bear-mobile-thinking { display: none; }
+@media (max-width: 767px) {
+  .bear-mobile-thinking { display: flex; }
+}
+
 html,
 body {
   min-height: 100%;
