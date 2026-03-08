@@ -1,69 +1,318 @@
 "use client";
 
-// ── Parrot placeholder page ────────────────────────────────────────
-// Phase 5 will replace this with the full Parrot Chat UI & Jungle Environment.
-// The layout mirrors the Bear page structure so routing, auth protection,
-// and the (chat) layout group are all confirmed working before Phase 5.
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createClient } from "@/lib/supabase/client";
+import JungleBackground from "@/components/parrot/JungleBackground";
+import ParrotCharacter from "@/components/parrot/ParrotCharacter";
+import ChatMessage from "@/components/parrot/ChatMessage";
+import InlineDraftCard from "@/components/parrot/InlineDraftCard";
+import SessionSidebar from "@/components/parrot/SessionSidebar";
+import type { ParrotDraft } from "@/lib/parrotSchemas";
+
+// ── Types ──────────────────────────────────────────────────────────
+
+type ParrotState = "idle" | "thinking" | "talking";
+
+type ChatEntry =
+    | { id: string; type: "user"; content: string }
+    | { id: string; type: "parrot"; content: string }
+    | { id: string; type: "draft"; draft: ParrotDraft; introMessage: string };
+
+interface Session {
+    id: string;
+    title: string | null;
+    created_at: string;
+}
+
+interface HistoryItem {
+    role: "user" | "parrot";
+    content: string;
+}
+
+const DRAFT_MARKER = "__parrot_draft";
+
+function uid() {
+    return Math.random().toString(36).slice(2);
+}
+
+function parseMessageContent(role: "user" | "parrot", rawContent: string): ChatEntry {
+    if (role === "parrot") {
+        try {
+            const parsed = JSON.parse(rawContent);
+            if (parsed[DRAFT_MARKER] === true) {
+                return {
+                    id: uid(),
+                    type: "draft",
+                    draft: parsed.draft as ParrotDraft,
+                    introMessage: parsed.intro,
+                };
+            }
+        } catch {
+            // not JSON — plain text
+        }
+        return { id: uid(), type: "parrot", content: rawContent };
+    }
+    return { id: uid(), type: "user", content: rawContent };
+}
+
+function buildHistory(entries: ChatEntry[]): HistoryItem[] {
+    return entries.map((e) => {
+        if (e.type === "user") {
+            return { role: "user" as const, content: e.content };
+        }
+        if (e.type === "parrot") {
+            return { role: "parrot" as const, content: e.content };
+        }
+        // Draft entries: include the intro message so Parrot has full context for refinements
+        return { role: "parrot" as const, content: e.introMessage };
+    });
+}
+
+// ── Hamburger icon ─────────────────────────────────────────────────
+
+function HamburgerLines({ color = "rgba(190,225,210,0.65)" }: { color?: string }) {
+    return (
+        <>
+            {[0, 1, 2].map((i) => (
+                <span
+                    key={i}
+                    style={{
+                        display: "block",
+                        width: "18px",
+                        height: "2px",
+                        borderRadius: "1px",
+                        background: color,
+                    }}
+                />
+            ))}
+        </>
+    );
+}
+
+// ── Component ──────────────────────────────────────────────────────
 
 export default function ParrotPage() {
+    const [entries, setEntries] = useState<ChatEntry[]>([]);
+    const [sessionId, setSessionId] = useState<string | null>(null);
+    const [sessions, setSessions] = useState<Session[]>([]);
+    const [input, setInput] = useState("");
+    const [parrotState, setParrotState] = useState<ParrotState>("idle");
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const supabase = createClient();
+
+    // ── Derived state ──────────────────────────────────────────────
+
+    const hasMessages = entries.length > 0;
+    const isSending = parrotState === "thinking";
+    // Dim the jungle when a draft just landed — focus attention on the card
+    const lastEntryIsDraft = entries.length > 0 && entries[entries.length - 1].type === "draft";
+
+    // ── Load sessions ──────────────────────────────────────────────
+
+    const loadSessions = useCallback(async () => {
+        const { data } = await supabase
+            .from("sessions")
+            .select("id, title, created_at")
+            .eq("engine", "parrot")
+            .order("created_at", { ascending: false })
+            .limit(40);
+        if (data) setSessions(data);
+    }, [supabase]);
+
+    useEffect(() => { loadSessions(); }, [loadSessions]);
+
+    // ── Auto-scroll ────────────────────────────────────────────────
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [entries, parrotState]);
+
+    // ── Load a past session ────────────────────────────────────────
+
+    const loadSession = useCallback(async (id: string) => {
+        setSessionId(id);
+        setEntries([]);
+        setParrotState("idle");
+
+        const { data: msgs } = await supabase
+            .from("messages")
+            .select("role, content, created_at")
+            .eq("session_id", id)
+            .order("created_at", { ascending: true });
+
+        if (!msgs) return;
+        setEntries(msgs.map((m) => parseMessageContent(m.role as "user" | "parrot", m.content)));
+    }, [supabase]);
+
+    // ── New session ────────────────────────────────────────────────
+
+    const startNewSession = useCallback(() => {
+        setSessionId(null);
+        setEntries([]);
+        setParrotState("idle");
+        setTimeout(() => inputRef.current?.focus(), 100);
+    }, []);
+
+    // ── Send message ───────────────────────────────────────────────
+
+    const sendMessage = useCallback(async () => {
+        const text = input.trim();
+        if (!text || isSending) return;
+
+        setInput("");
+        setParrotState("thinking");
+
+        const userEntry: ChatEntry = { id: uid(), type: "user", content: text };
+        setEntries((prev) => [...prev, userEntry]);
+
+        const history = buildHistory(entries);
+
+        try {
+            const res = await fetch("/api/parrot", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...(sessionId ? { session_id: sessionId } : {}),
+                    message: text,
+                    history,
+                }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                setEntries((prev) => [
+                    ...prev,
+                    { id: uid(), type: "parrot", content: err.error ?? "Something went wrong. Parrot will be back shortly." },
+                ]);
+                setParrotState("idle");
+                return;
+            }
+
+            const data = await res.json();
+
+            if (!sessionId) {
+                setSessionId(data.session_id);
+                loadSessions();
+            }
+
+            // Parrot animates briefly when responding
+            setParrotState("talking");
+            setTimeout(() => setParrotState("idle"), 1800);
+
+            if (data.response_type === "draft" && data.draft) {
+                setEntries((prev) => [
+                    ...prev,
+                    { id: uid(), type: "draft", draft: data.draft as ParrotDraft, introMessage: data.message },
+                ]);
+            } else {
+                setEntries((prev) => [...prev, { id: uid(), type: "parrot", content: data.message }]);
+            }
+        } catch {
+            setEntries((prev) => [
+                ...prev,
+                { id: uid(), type: "parrot", content: "Something went wrong. Parrot will be back shortly." },
+            ]);
+            setParrotState("idle");
+        } finally {
+            setTimeout(() => inputRef.current?.focus(), 100);
+        }
+    }, [input, isSending, entries, sessionId, loadSessions]);
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    };
+
+    // ── Render ─────────────────────────────────────────────────────
+
     return (
-        <div
-            style={{
-                position: "relative",
-                height: "100vh",
-                overflow: "hidden",
-                display: "flex",
-                background: "linear-gradient(to bottom, #020705 0%, #040e08 30%, #061410 60%, #050c07 100%)",
-            }}
-        >
-            {/* ── LEFT PANEL — Parrot placeholder ── */}
+        <div className="relative h-screen overflow-hidden flex">
+            <JungleBackground />
+
+            {/* ── Background dim overlay — fades in when a draft is active ── */}
             <div
-                className="bear-left-panel"
                 style={{
-                    // reuse bear-left-panel CSS class for consistent responsive behaviour
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: 1,
+                    background: "rgba(0,0,0,0.45)",
+                    opacity: lastEntryIsDraft ? 1 : 0,
+                    transition: "opacity 0.7s ease",
+                    pointerEvents: "none",
                 }}
-            >
-                {/* Parrot silhouette placeholder */}
-                <div
+            />
+
+            <SessionSidebar
+                sessions={sessions}
+                activeSessionId={sessionId}
+                onSelectSession={loadSession}
+                onNewSession={startNewSession}
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+            />
+
+            {/* ── LEFT PANEL — Parrot (hidden on mobile via CSS) ── */}
+            <div className="bear-left-panel">
+                {/* Sessions button — top-left of parrot panel */}
+                <button
+                    onClick={() => setSidebarOpen(true)}
+                    aria-label="Open sessions"
                     style={{
-                        width: "200px",
-                        height: "200px",
-                        borderRadius: "50%",
-                        background: "rgba(255,255,255,0.04)",
-                        border: "2px dashed rgba(255,255,255,0.1)",
+                        position: "absolute",
+                        top: "16px",
+                        left: "16px",
+                        background: "rgba(3,12,6,0.55)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: "10px",
+                        padding: "8px 10px",
+                        cursor: "pointer",
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        flexDirection: "column",
+                        gap: "4px",
+                        backdropFilter: "blur(8px)",
                     }}
                 >
-                    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" opacity="0.3">
-                        {/* Simple parrot silhouette */}
-                        <ellipse cx="40" cy="45" rx="22" ry="28" fill="#c8f0c8"/>
-                        <ellipse cx="40" cy="22" rx="16" ry="16" fill="#c8f0c8"/>
-                        <path d="M48 18 Q62 12 58 26 Q52 22 48 22 Z" fill="#c8f0c8"/>
-                        <ellipse cx="35" cy="20" rx="3" ry="3.5" fill="#0a1a0a"/>
-                        <ellipse cx="36" cy="19" rx="1" ry="1" fill="rgba(255,255,255,0.6)"/>
-                        <path d="M34 28 Q40 32 46 28" stroke="#0a1a0a" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-                        <path d="M28 58 Q22 68 18 72" stroke="#c8f0c8" strokeWidth="8" strokeLinecap="round"/>
-                        <path d="M52 58 Q58 68 62 72" stroke="#c8f0c8" strokeWidth="8" strokeLinecap="round"/>
-                    </svg>
-                </div>
+                    <HamburgerLines />
+                </button>
 
+                {/* Parrot character */}
+                <ParrotCharacter state={parrotState} size={240} />
+
+                {/* Parrot name */}
                 <span
                     style={{
                         fontSize: "0.8rem",
                         fontWeight: 600,
                         letterSpacing: "0.2em",
                         textTransform: "uppercase",
-                        color: "rgba(200,230,200,0.3)",
-                        marginTop: "8px",
+                        color: "rgba(190,230,210,0.4)",
                     }}
                 >
                     Parrot
                 </span>
+
+                {/* Crafting label */}
+                {parrotState === "thinking" && (
+                    <span
+                        style={{
+                            fontSize: "0.8rem",
+                            fontStyle: "italic",
+                            color: "rgba(52,211,153,0.6)",
+                            position: "absolute",
+                            bottom: "28px",
+                        }}
+                    >
+                        Crafting…
+                    </span>
+                )}
             </div>
 
-            {/* ── RIGHT PANEL — Coming soon ── */}
+            {/* ── RIGHT PANEL — Chat ── */}
             <div
                 style={{
                     flex: 1,
@@ -72,77 +321,226 @@ export default function ParrotPage() {
                     zIndex: 10,
                     display: "flex",
                     flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "rgba(2,9,4,0.68)",
+                    background: "rgba(2,10,5,0.68)",
                     backdropFilter: "blur(18px)",
                     borderLeft: "1px solid rgba(255,255,255,0.05)",
-                    gap: "12px",
-                    padding: "32px",
                 }}
             >
+                {/* Top bar */}
                 <div
                     style={{
-                        display: "inline-flex",
-                        padding: "4px 12px",
-                        borderRadius: "99px",
-                        background: "rgba(134,239,172,0.1)",
-                        border: "1px solid rgba(134,239,172,0.2)",
-                        fontSize: "0.7rem",
-                        fontWeight: 700,
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        color: "rgba(134,239,172,0.7)",
-                        marginBottom: "4px",
+                        padding: "14px 16px",
+                        borderBottom: "1px solid rgba(255,255,255,0.05)",
+                        flexShrink: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
                     }}
                 >
-                    Coming in Phase 5
+                    {/* Mobile-only hamburger — hidden on desktop via CSS */}
+                    <button
+                        className="bear-mobile-menu-btn"
+                        onClick={() => setSidebarOpen(true)}
+                        aria-label="Open sessions"
+                        style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            flexDirection: "column",
+                            gap: "4px",
+                            padding: "4px",
+                        }}
+                    >
+                        <HamburgerLines color="rgba(190,225,210,0.5)" />
+                    </button>
+
+                    <span
+                        style={{
+                            fontSize: "0.8rem",
+                            fontWeight: 600,
+                            letterSpacing: "0.1em",
+                            textTransform: "uppercase",
+                            color: "rgba(200,235,215,0.4)",
+                            flex: 1,
+                            textAlign: "center",
+                        }}
+                    >
+                        {sessionId ? "Session" : "New conversation"}
+                    </span>
+
+                    {/* Right spacer — keeps title centred when mobile menu is shown */}
+                    <div className="bear-mobile-menu-btn" style={{ width: "26px", flexShrink: 0 }} />
                 </div>
 
-                <h2
+                {/* Messages area */}
+                <div
+                    className="no-scrollbar"
                     style={{
-                        margin: 0,
-                        fontSize: "1.25rem",
-                        fontWeight: 700,
-                        color: "rgba(210,240,215,0.7)",
-                        textAlign: "center",
+                        flex: 1,
+                        overflowY: "auto",
+                        padding: hasMessages ? "20px 18px 12px" : "0",
+                        display: "flex",
+                        flexDirection: "column",
                     }}
                 >
-                    Parrot is almost ready.
-                </h2>
+                    {!hasMessages ? (
+                        <div
+                            style={{
+                                flex: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: "32px",
+                            }}
+                        >
+                            <p
+                                style={{
+                                    color: "rgba(170,215,190,0.35)",
+                                    fontSize: "1rem",
+                                    fontStyle: "italic",
+                                    textAlign: "center",
+                                    maxWidth: "260px",
+                                    lineHeight: "1.6",
+                                    margin: 0,
+                                }}
+                            >
+                                What do you need to say?
+                            </p>
+                        </div>
+                    ) : (
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "14px",
+                                width: "100%",
+                            }}
+                        >
+                            {entries.map((entry) => {
+                                if (entry.type === "user") {
+                                    return <ChatMessage key={entry.id} role="user" content={entry.content} />;
+                                }
+                                if (entry.type === "parrot") {
+                                    return <ChatMessage key={entry.id} role="parrot" content={entry.content} />;
+                                }
+                                return (
+                                    <InlineDraftCard
+                                        key={entry.id}
+                                        draft={entry.draft}
+                                        introMessage={entry.introMessage}
+                                    />
+                                );
+                            })}
 
-                <p
-                    style={{
-                        margin: 0,
-                        fontSize: "0.9375rem",
-                        color: "rgba(170,210,180,0.4)",
-                        textAlign: "center",
-                        maxWidth: "280px",
-                        lineHeight: "1.65",
-                        fontStyle: "italic",
-                    }}
-                >
-                    Paste the message. Answer two questions.
-                    <br />
-                    Get three drafts — direct, warm, and whatever else it needs to be.
-                </p>
+                            {/* Mobile-only thinking indicator — parrot panel is hidden on mobile */}
+                            {isSending && (
+                                <div
+                                    className="bear-mobile-thinking"
+                                    style={{
+                                        alignItems: "center",
+                                        gap: "8px",
+                                        padding: "6px 4px",
+                                        animation: "message-appear 0.3s ease-out both",
+                                    }}
+                                >
+                                    <span style={{ color: "rgba(190,225,210,0.45)", fontSize: "0.85rem", fontStyle: "italic" }}>
+                                        Parrot is crafting
+                                    </span>
+                                    <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                                        {[0, 1, 2].map((i) => (
+                                            <div
+                                                key={i}
+                                                style={{
+                                                    width: "5px",
+                                                    height: "5px",
+                                                    borderRadius: "50%",
+                                                    background: "rgba(52,211,153,0.75)",
+                                                    animation: "think-bounce 1.4s ease-in-out infinite",
+                                                    animationDelay: `${i * 0.22}s`,
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
-                <a
-                    href="/bear"
+                            <div ref={messagesEndRef} />
+                        </div>
+                    )}
+                </div>
+
+                {/* Input bar */}
+                <div
                     style={{
-                        marginTop: "16px",
-                        padding: "10px 20px",
-                        borderRadius: "10px",
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        color: "rgba(200,225,210,0.6)",
-                        fontSize: "0.875rem",
-                        textDecoration: "none",
-                        cursor: "pointer",
+                        padding: "12px 16px 18px",
+                        borderTop: "1px solid rgba(255,255,255,0.05)",
+                        flexShrink: 0,
                     }}
                 >
-                    ← Back to Bear
-                </a>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>
+                        <textarea
+                            ref={inputRef}
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="What do you need to say?"
+                            rows={1}
+                            disabled={isSending}
+                            className="no-scrollbar"
+                            style={{
+                                flex: 1,
+                                background: "rgba(255,255,255,0.05)",
+                                border: "1px solid rgba(255,255,255,0.1)",
+                                borderRadius: "14px",
+                                padding: "12px 16px",
+                                color: "rgba(215,245,228,0.95)",
+                                fontSize: "0.9375rem",
+                                lineHeight: "1.5",
+                                outline: "none",
+                                resize: "none",
+                                minHeight: "48px",
+                                maxHeight: "130px",
+                                overflowY: "auto",
+                                fontFamily: "inherit",
+                            }}
+                            onInput={(e) => {
+                                const el = e.currentTarget;
+                                el.style.height = "auto";
+                                el.style.height = Math.min(el.scrollHeight, 130) + "px";
+                            }}
+                        />
+                        <button
+                            onClick={sendMessage}
+                            disabled={!input.trim() || isSending}
+                            style={{
+                                width: "46px",
+                                height: "46px",
+                                borderRadius: "50%",
+                                background: input.trim() && !isSending
+                                    ? "rgba(52,211,153,0.9)"
+                                    : "rgba(52,211,153,0.15)",
+                                border: "none",
+                                cursor: input.trim() && !isSending ? "pointer" : "not-allowed",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                                transition: "background 0.2s",
+                            }}
+                            aria-label="Send"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M10 16V6M10 6L6 10M10 6L14 10"
+                                    stroke={input.trim() && !isSending ? "#042010" : "rgba(52,211,153,0.4)"}
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

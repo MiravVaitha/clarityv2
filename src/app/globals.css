@@ -143,6 +143,47 @@
   100% { opacity: 1; transform: translateX(0)    scale(1);    }
 }
 
+/* ── Parrot / Jungle animations ── */
+@keyframes vine-sway {
+  0%, 100% { transform: rotate(-3deg) translateX(0px);  }
+  40%       { transform: rotate(2deg)  translateX(5px);  }
+  70%       { transform: rotate(-1deg) translateX(-3px); }
+}
+@keyframes vine-sway-alt {
+  0%, 100% { transform: rotate(4deg)  translateX(0px);  }
+  50%       { transform: rotate(-3deg) translateX(-6px); }
+}
+@keyframes jungle-mist {
+  0%, 100% { transform: translateX(-8%)  scaleX(1.05); opacity: 0.1;  }
+  50%       { transform: translateX(8%)   scaleX(1);    opacity: 0.18; }
+}
+@keyframes jungle-particle {
+  0%   { opacity: 0;   transform: translate(0,     0);     }
+  25%  { opacity: 0.8; transform: translate(6px,  -10px);  }
+  50%  { opacity: 0.3; transform: translate(2px,  -5px);   }
+  75%  { opacity: 0.7; transform: translate(10px, -18px);  }
+  100% { opacity: 0;   transform: translate(4px,  -24px);  }
+}
+@keyframes parrot-breathe {
+  0%, 100% { transform: scaleY(1)    scaleX(1);    }
+  50%       { transform: scaleY(1.02) scaleX(0.99); }
+}
+@keyframes parrot-talk {
+  0%, 100% { transform: translateY(0)   scale(1);    }
+  20%       { transform: translateY(-5px) scale(1.02); }
+  50%       { transform: translateY(-3px) scale(1.01); }
+  80%       { transform: translateY(-4px) scale(1.02); }
+}
+@keyframes draft-appear {
+  0%   { opacity: 0; transform: translateY(16px) scale(0.98); }
+  65%  {             transform: translateY(-3px) scale(1);    }
+  100% { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+@keyframes tab-slide-in {
+  0%   { opacity: 0; transform: translateY(8px);  }
+  100% { opacity: 1; transform: translateY(0);    }
+}
+
 /* Hides scrollbar visually while keeping scroll functionality */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
