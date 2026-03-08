@@ -23,8 +23,8 @@ export default function Navbar() {
         router.push("/login");
     };
 
-    // Determine theme based on route
-    const isDarkTheme = pathname === "/clarity" || pathname === "/communication";
+    // Determine theme based on route — dark on home (split-world bg) and old pages
+    const isDarkTheme = pathname === "/home" || pathname === "/clarity" || pathname === "/communication";
     const navClass = isDarkTheme
         ? "glass-dark-nav !shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
         : "glass-luminous !shadow-[0_20px_50px_rgba(31,38,135,0.1)]";
@@ -42,8 +42,8 @@ export default function Navbar() {
                 <div className="hidden md:flex items-center gap-8">
                     {[
                         { label: "Home", href: "/home" },
-                        { label: "Clarity", href: "/clarity" },
-                        { label: "Communication", href: "/communication" },
+                        { label: "Bear", href: "/bear" },
+                        { label: "Parrot", href: "/parrot" },
                     ].map((item) => (
                         <Link
                             key={item.href}

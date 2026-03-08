@@ -112,6 +112,14 @@ export default function ParrotPage() {
 
     // ── Load sessions ──────────────────────────────────────────────
 
+    // ── First-visit welcome message ────────────────────────────────
+
+    const PARROT_WELCOME: ChatEntry = {
+        id: "parrot-welcome",
+        type: "parrot",
+        content: "Hey — I'm Parrot. What do you need to say, and who's it going to? Give me the situation and I'll ask a couple of quick questions. Then I'll put together a few options for you.",
+    };
+
     const loadSessions = useCallback(async () => {
         const { data } = await supabase
             .from("sessions")
@@ -119,8 +127,14 @@ export default function ParrotPage() {
             .eq("engine", "parrot")
             .order("created_at", { ascending: false })
             .limit(40);
-        if (data) setSessions(data);
-    }, [supabase]);
+        if (data) {
+            setSessions(data);
+            // First-visit onboarding: show welcome if user has never had a Parrot session
+            if (data.length === 0) {
+                setEntries((prev) => prev.length === 0 ? [PARROT_WELCOME] : prev);
+            }
+        }
+    }, [supabase]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => { loadSessions(); }, [loadSessions]);
 
@@ -368,8 +382,30 @@ export default function ParrotPage() {
                         {sessionId ? "Session" : "New conversation"}
                     </span>
 
-                    {/* Right spacer — keeps title centred when mobile menu is shown */}
-                    <div className="bear-mobile-menu-btn" style={{ width: "26px", flexShrink: 0 }} />
+                    {/* Home button — right side */}
+                    <a
+                        href="/home"
+                        aria-label="Home"
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: "30px",
+                            height: "30px",
+                            borderRadius: "8px",
+                            color: "rgba(170,220,200,0.38)",
+                            textDecoration: "none",
+                            flexShrink: 0,
+                            transition: "color 0.15s",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(170,220,200,0.7)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(170,220,200,0.38)")}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                            <path d="M3 9.5L10 3l7 6.5V17a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                            <path d="M7 18v-6h6v6" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                        </svg>
+                    </a>
                 </div>
 
                 {/* Messages area */}
