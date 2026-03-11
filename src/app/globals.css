@@ -219,6 +219,12 @@
   .bear-mobile-thinking { display: flex; }
 }
 
+/* ── Custom cursor — hide native on pointer devices ── */
+@media (pointer: fine) {
+  * { cursor: none !important; }
+  input, textarea { cursor: text !important; }
+}
+
 html,
 body {
   min-height: 100%;
