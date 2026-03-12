@@ -117,9 +117,15 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Divider */}
-            <div className="hidden md:block" style={{ width: "1px", background: "rgba(255,255,255,0.05)", flexShrink: 0, zIndex: 5 }} />
-            <div className="md:hidden" style={{ height: "1px", background: "rgba(255,255,255,0.05)", flexShrink: 0, zIndex: 5 }} />
+            {/* Divider — gradient line that fades at the edges */}
+            <div className="hidden md:block" style={{
+                width: "1px", flexShrink: 0, zIndex: 5,
+                background: "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.07) 25%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.07) 75%, transparent 100%)",
+            }} />
+            <div className="md:hidden" style={{
+                height: "1px", flexShrink: 0, zIndex: 5,
+                background: "linear-gradient(to right, transparent 0%, rgba(255,255,255,0.07) 25%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.07) 75%, transparent 100%)",
+            }} />
 
             {/* ════════════════════════════════════════
                 PARROT HALF — right on desktop, bottom on mobile

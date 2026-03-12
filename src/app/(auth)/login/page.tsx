@@ -111,6 +111,12 @@ export default function Login() {
                 </div>
             </div>
 
+            {/* Divider — gradient line that fades at the edges */}
+            <div style={{
+                width: "1px", flexShrink: 0, zIndex: 5,
+                background: "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.07) 25%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.07) 75%, transparent 100%)",
+            }} />
+
             {/* ── PARROT HALF — right background ── */}
             <div
                 className="flex-1 relative overflow-hidden"
