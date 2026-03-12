@@ -2,16 +2,28 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import BearCharacter from "@/components/bear/BearCharacter";
 import ParrotCharacter from "@/components/parrot/ParrotCharacter";
 import BrandLogo from "@/components/BrandLogo";
+import ConfirmationModal from "@/components/ConfirmationModal";
+import { createClient } from "@/lib/supabase/client";
 
 type HoverSide = "bear" | "parrot" | null;
 
 export default function Home() {
+    const router = useRouter();
     const [bearState, setBearState] = useState<"idle" | "talking">("idle");
     const [parrotState, setParrotState] = useState<"idle" | "talking">("idle");
     const [hovered, setHovered] = useState<HoverSide>(null);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+    const confirmLogout = async () => {
+        setIsLogoutModalOpen(false);
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.push("/login");
+    };
 
     return (
         // Fixed full-screen — the (app) Navbar (z-50, sticky) floats transparently on top
@@ -270,8 +282,59 @@ export default function Home() {
                             Talk to Parrot →
                         </Link>
                     </div>
+
+                    {/* Divider */}
+                    <div style={{
+                        height: "1px",
+                        background: "rgba(255,255,255,0.07)",
+                        margin: "18px 0 14px",
+                    }} />
+
+                    {/* Account & Logout */}
+                    <div style={{ display: "flex", justifyContent: "center", gap: "24px" }}>
+                        <Link
+                            href="/account"
+                            style={{
+                                fontSize: "0.75rem",
+                                color: "rgba(175,215,198,0.45)",
+                                textDecoration: "none",
+                                letterSpacing: "0.03em",
+                                transition: "color 0.18s",
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(175,215,198,0.85)")}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(175,215,198,0.45)")}
+                        >
+                            Account
+                        </Link>
+                        <button
+                            onClick={() => setIsLogoutModalOpen(true)}
+                            style={{
+                                fontSize: "0.75rem",
+                                color: "rgba(175,215,198,0.45)",
+                                background: "none",
+                                border: "none",
+                                padding: 0,
+                                letterSpacing: "0.03em",
+                                transition: "color 0.18s",
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(248,113,113,0.85)")}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(175,215,198,0.45)")}
+                        >
+                            Logout
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={isLogoutModalOpen}
+                title="Log out?"
+                message="Are you sure you want to log out?"
+                confirmLabel="Log out"
+                onConfirm={confirmLogout}
+                onCancel={() => setIsLogoutModalOpen(false)}
+                variant="destructive"
+            />
         </div>
     );
 }

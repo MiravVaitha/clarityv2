@@ -23,8 +23,11 @@ export default function Navbar() {
         router.push("/login");
     };
 
-    // Determine theme based on route — dark on home (split-world bg) and old pages
-    const isDarkTheme = pathname === "/home" || pathname === "/clarity" || pathname === "/communication";
+    // Hide entirely on home — the centre card handles Account & Logout there
+    if (pathname === "/home") return null;
+
+    // Determine theme based on route — dark on old pages
+    const isDarkTheme = pathname === "/clarity" || pathname === "/communication";
     const navClass = isDarkTheme
         ? "glass-dark-nav !shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
         : "glass-luminous !shadow-[0_20px_50px_rgba(31,38,135,0.1)]";
