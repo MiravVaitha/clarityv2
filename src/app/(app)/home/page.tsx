@@ -266,7 +266,10 @@ export default function Home() {
                             onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(251,191,36,1)")}
                             onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(251,191,36,0.88)")}
                         >
-                            Talk to Bear →
+                            {/* Desktop: Bear is left → ←   Mobile: Bear is top → ↑ */}
+                            <span className="hidden md:inline">← </span>
+                            <span className="md:hidden">↑ </span>
+                            Talk to Bear
                         </Link>
                         <Link
                             href="/parrot"
@@ -285,7 +288,10 @@ export default function Home() {
                             onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(52,211,153,1)")}
                             onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(52,211,153,0.88)")}
                         >
-                            Talk to Parrot →
+                            {/* Desktop: Parrot is right → →   Mobile: Parrot is bottom → ↓ */}
+                            Talk to Parrot
+                            <span className="hidden md:inline"> →</span>
+                            <span className="md:hidden"> ↓</span>
                         </Link>
                     </div>
 
