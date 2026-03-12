@@ -117,15 +117,6 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Divider — gradient line that fades at the edges */}
-            <div className="hidden md:block" style={{
-                width: "1px", flexShrink: 0, zIndex: 5,
-                background: "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.07) 25%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.07) 75%, transparent 100%)",
-            }} />
-            <div className="md:hidden" style={{
-                height: "1px", flexShrink: 0, zIndex: 5,
-                background: "linear-gradient(to right, transparent 0%, rgba(255,255,255,0.07) 25%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.07) 75%, transparent 100%)",
-            }} />
 
             {/* ════════════════════════════════════════
                 PARROT HALF — right on desktop, bottom on mobile
@@ -220,6 +211,13 @@ export default function Home() {
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                 style={{ zIndex: 20, width: "290px", maxWidth: "calc(100vw - 48px)" }}
             >
+                {/* Lines running from card edges to top of screen */}
+                <div style={{ position: "absolute", left: 0, bottom: "100%", width: "1px", height: "100vh", background: "linear-gradient(to top, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.07) 50%, transparent 100%)", pointerEvents: "none" }} />
+                <div style={{ position: "absolute", right: 0, bottom: "100%", width: "1px", height: "100vh", background: "linear-gradient(to top, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.07) 50%, transparent 100%)", pointerEvents: "none" }} />
+                {/* Lines running from card edges to bottom of screen */}
+                <div style={{ position: "absolute", left: 0, top: "100%", width: "1px", height: "100vh", background: "linear-gradient(to bottom, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.07) 50%, transparent 100%)", pointerEvents: "none" }} />
+                <div style={{ position: "absolute", right: 0, top: "100%", width: "1px", height: "100vh", background: "linear-gradient(to bottom, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.07) 50%, transparent 100%)", pointerEvents: "none" }} />
+
                 <div style={{
                     background: "rgba(3,12,6,0.84)",
                     backdropFilter: "blur(24px)",
