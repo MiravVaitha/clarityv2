@@ -62,15 +62,18 @@ export default function AccountPage() {
         }
     };
 
-    if (!user) return null;
+    const bgStyle = {
+        background: "linear-gradient(135deg, #020a04 0%, #031206 40%, #020905 70%, #010703 100%)",
+        zIndex: 0,
+    } as const;
+
+    // Render dark shell immediately so there's no white flash while user loads
+    if (!user) return <div className="fixed inset-0" style={bgStyle} />;
 
     return (
         <div
             className="fixed inset-0 flex items-center justify-center"
-            style={{
-                background: "linear-gradient(135deg, #020a04 0%, #031206 40%, #020905 70%, #010703 100%)",
-                zIndex: 0,
-            }}
+            style={bgStyle}
         >
             {/* Ambient glow */}
             <div style={{
