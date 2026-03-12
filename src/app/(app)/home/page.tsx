@@ -98,7 +98,7 @@ export default function Home() {
                         fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase",
                         color: "rgba(251,191,36,0.55)", marginBottom: "3px", fontWeight: 700,
                     }}>
-                        Bear
+                        Zulu
                     </div>
                     <div style={{ fontSize: "0.78rem", color: "rgba(190,220,200,0.35)", fontStyle: "italic" }}>
                         Clarity &amp; decisions
@@ -194,7 +194,7 @@ export default function Home() {
                         fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase",
                         color: "rgba(52,211,153,0.55)", marginBottom: "3px", fontWeight: 700,
                     }}>
-                        Parrot
+                        Tango
                     </div>
                     <div style={{ fontSize: "0.78rem", color: "rgba(190,220,200,0.35)", fontStyle: "italic" }}>
                         Drafts &amp; messages
@@ -269,7 +269,7 @@ export default function Home() {
                             {/* Desktop: Bear is left → ←   Mobile: Bear is top → ↑ */}
                             <span className="hidden md:inline">← </span>
                             <span className="md:hidden">↑ </span>
-                            Talk to Bear
+                            Talk to Zulu
                         </Link>
                         <Link
                             href="/parrot"
@@ -289,7 +289,7 @@ export default function Home() {
                             onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(52,211,153,0.88)")}
                         >
                             {/* Desktop: Parrot is right → →   Mobile: Parrot is bottom → ↓ */}
-                            Talk to Parrot
+                            Talk to Tango
                             <span className="hidden md:inline"> →</span>
                             <span className="md:hidden"> ↓</span>
                         </Link>
@@ -341,7 +341,7 @@ export default function Home() {
             <ConfirmationModal
                 isOpen={isLogoutModalOpen}
                 title="Heading out?"
-                message="Bear and Parrot will be waiting when you're back."
+                message="Zulu and Tango will be waiting when you're back."
                 confirmLabel="Log out"
                 cancelLabel="Stay"
                 onConfirm={confirmLogout}

@@ -117,7 +117,7 @@ export default function ParrotPage() {
     const PARROT_WELCOME: ChatEntry = {
         id: "parrot-welcome",
         type: "parrot",
-        content: "Hey — I'm Parrot. What do you need to say, and who's it going to? Give me the situation and I'll ask a couple of quick questions. Then I'll put together a few options for you.",
+        content: "Hey — I'm Tango. What do you need to say, and who's it going to? Give me the situation and I'll ask a couple of quick questions. Then I'll put together a few options for you.",
     };
 
     const loadSessions = useCallback(async () => {
@@ -199,7 +199,7 @@ export default function ParrotPage() {
                 const err = await res.json().catch(() => ({}));
                 setEntries((prev) => [
                     ...prev,
-                    { id: uid(), type: "parrot", content: err.error ?? "Something went wrong. Parrot will be back shortly." },
+                    { id: uid(), type: "parrot", content: err.error ?? "Something went wrong. Tango will be back shortly." },
                 ]);
                 setParrotState("idle");
                 return;
@@ -227,7 +227,7 @@ export default function ParrotPage() {
         } catch {
             setEntries((prev) => [
                 ...prev,
-                { id: uid(), type: "parrot", content: "Something went wrong. Parrot will be back shortly." },
+                { id: uid(), type: "parrot", content: "Something went wrong. Tango will be back shortly." },
             ]);
             setParrotState("idle");
         } finally {
@@ -307,7 +307,7 @@ export default function ParrotPage() {
                         color: "rgba(190,230,210,0.4)",
                     }}
                 >
-                    Parrot
+                    Tango
                 </span>
 
                 {/* Crafting label */}
@@ -321,7 +321,7 @@ export default function ParrotPage() {
                             bottom: "28px",
                         }}
                     >
-                        Crafting…
+                        Tango is crafting…
                     </span>
                 )}
             </div>
@@ -480,7 +480,7 @@ export default function ParrotPage() {
                                     }}
                                 >
                                     <span style={{ color: "rgba(190,225,210,0.45)", fontSize: "0.85rem", fontStyle: "italic" }}>
-                                        Parrot is crafting
+                                        Tango is crafting
                                     </span>
                                     <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
                                         {[0, 1, 2].map((i) => (

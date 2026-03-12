@@ -107,7 +107,7 @@ export default function Login() {
                     fontSize: "0.55rem", letterSpacing: "0.18em", textTransform: "uppercase",
                     color: "rgba(251,191,36,0.28)", fontWeight: 700, whiteSpace: "nowrap",
                 }}>
-                    Bear · Clarity
+                    Zulu · Clarity
                 </div>
             </div>
 
@@ -158,7 +158,7 @@ export default function Login() {
                     fontSize: "0.55rem", letterSpacing: "0.18em", textTransform: "uppercase",
                     color: "rgba(52,211,153,0.28)", fontWeight: 700, whiteSpace: "nowrap",
                 }}>
-                    Parrot · Drafts
+                    Tango · Drafts
                 </div>
             </div>
 

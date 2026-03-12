@@ -112,7 +112,7 @@ export default function BearPage() {
     const BEAR_WELCOME: ChatEntry = {
         id: "bear-welcome",
         type: "bear",
-        content: "Hey — I'm Bear. Tell me what's on your mind. A decision you're weighing, something you're trying to plan, or just something that feels tangled. I'll help you see it clearly.",
+        content: "Hey — I'm Zulu. Tell me what's on your mind. A decision you're weighing, something you're trying to plan, or just something that feels tangled. I'll help you see it clearly.",
     };
 
     // ── Load sessions ──────────────────────────────────────────────
@@ -304,7 +304,7 @@ export default function BearPage() {
                         color: "rgba(200,225,210,0.4)",
                     }}
                 >
-                    Bear
+                    Zulu
                 </span>
 
                 {/* Thinking label */}
@@ -318,7 +318,7 @@ export default function BearPage() {
                             bottom: "28px",
                         }}
                     >
-                        Thinking…
+                        Zulu is thinking…
                     </span>
                 )}
             </div>
@@ -478,7 +478,7 @@ export default function BearPage() {
                                     }}
                                 >
                                     <span style={{ color: "rgba(200,225,210,0.45)", fontSize: "0.85rem", fontStyle: "italic" }}>
-                                        Bear is thinking
+                                        Zulu is thinking
                                     </span>
                                     <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
                                         {[0, 1, 2].map((i) => (
