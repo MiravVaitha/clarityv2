@@ -83,9 +83,10 @@ export default function Navbar() {
 
             <ConfirmationModal
                 isOpen={isLogoutModalOpen}
-                title="Log out?"
-                message="Are you sure you want to log out?"
+                title="Heading out?"
+                message="Bear and Parrot will be waiting when you're back."
                 confirmLabel="Log out"
+                cancelLabel="Stay"
                 onConfirm={confirmLogout}
                 onCancel={() => setIsLogoutModalOpen(false)}
                 variant="destructive"
