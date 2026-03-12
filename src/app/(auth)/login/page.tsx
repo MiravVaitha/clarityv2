@@ -156,23 +156,24 @@ export default function Login() {
                 </div>
             </div>
 
+            {/* ── World divider — single vertical line through center ── */}
+            <div style={{
+                position: "absolute", top: 0, bottom: 0, left: "50%",
+                width: "1px",
+                background: "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.07) 15%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.07) 85%, transparent 100%)",
+                zIndex: 10, pointerEvents: "none",
+            }} />
+
             {/* ── AUTH FORM — centred over both halves ── */}
             <div
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                 style={{ zIndex: 20, width: "360px", maxWidth: "calc(100vw - 32px)" }}
             >
-                {/* Lines running from card edges to top of screen */}
-                <div style={{ position: "absolute", left: 0, bottom: "100%", width: "1px", height: "100vh", background: "linear-gradient(to top, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.07) 50%, transparent 100%)", pointerEvents: "none" }} />
-                <div style={{ position: "absolute", right: 0, bottom: "100%", width: "1px", height: "100vh", background: "linear-gradient(to top, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.07) 50%, transparent 100%)", pointerEvents: "none" }} />
-                {/* Lines running from card edges to bottom of screen */}
-                <div style={{ position: "absolute", left: 0, top: "100%", width: "1px", height: "100vh", background: "linear-gradient(to bottom, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.07) 50%, transparent 100%)", pointerEvents: "none" }} />
-                <div style={{ position: "absolute", right: 0, top: "100%", width: "1px", height: "100vh", background: "linear-gradient(to bottom, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.07) 50%, transparent 100%)", pointerEvents: "none" }} />
-
                 <div style={{
                     background: "rgba(3,12,6,0.92)",
                     backdropFilter: "blur(28px)",
                     WebkitBackdropFilter: "blur(28px)",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    border: "1px solid rgba(255,255,255,0.13)",
                     borderRadius: "20px",
                     padding: "36px 32px",
                     boxShadow: "0 24px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)",
