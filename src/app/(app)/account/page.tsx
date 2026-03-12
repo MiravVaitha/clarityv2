@@ -14,6 +14,7 @@ export default function AccountPage() {
     const [displayName, setDisplayName] = useState("");
     const [saving, setSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState<{ text: string; ok: boolean } | null>(null);
+    const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -205,10 +206,7 @@ export default function AccountPage() {
 
                 {/* Sign out */}
                 <button
-                    onClick={async () => {
-                        await supabase.auth.signOut();
-                        router.push("/login");
-                    }}
+                    onClick={() => setIsSignOutModalOpen(true)}
                     style={{
                         display: "block",
                         width: "100%",
@@ -270,6 +268,22 @@ export default function AccountPage() {
                     Delete account and all data
                 </button>
             </div>
+
+            {/* Sign out confirmation modal */}
+            <ConfirmationModal
+                isOpen={isSignOutModalOpen}
+                title="Heading out?"
+                message="Zulu and Tango will be waiting when you're back."
+                confirmLabel="Log out"
+                cancelLabel="Stay"
+                onConfirm={async () => {
+                    setIsSignOutModalOpen(false);
+                    await supabase.auth.signOut();
+                    router.push("/login");
+                }}
+                onCancel={() => setIsSignOutModalOpen(false)}
+                variant="destructive"
+            />
 
             {/* Delete confirmation modal */}
             <ConfirmationModal
