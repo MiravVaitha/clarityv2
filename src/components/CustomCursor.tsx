@@ -62,8 +62,15 @@ export default function CustomCursor() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const arrowGlow = `drop-shadow(0 0 4px ${glowColor}) drop-shadow(0 0 8px ${glowColor})`
-  const pointerGlow = `drop-shadow(0 1px 4px rgba(0,0,0,0.9)) drop-shadow(0 0 7px ${glowColor})`
+  // All three cursors share the same glow style — white shape + page-aware colour glow
+  const glow = `drop-shadow(0 0 4px ${glowColor}) drop-shadow(0 0 8px ${glowColor})`
+
+  const sharedPath = {
+    fill: 'white',
+    stroke: 'rgba(0,0,0,0.28)',
+    strokeWidth: '0.7',
+    strokeLinejoin: 'round' as const,
+  }
 
   return (
     <div
@@ -80,82 +87,75 @@ export default function CustomCursor() {
         transform: 'translate(-200px, -200px)',
       }}
     >
-      {/* ── Default arrow ── */}
+      {/* ── Default arrow — hotspot top-left ── */}
       {type === 'default' && (
         <svg
-          width="16"
-          height="22"
-          viewBox="0 0 16 22"
-          style={{
-            display: 'block',
-            filter: arrowGlow,
-            transition: 'filter 0.6s ease',
-          }}
+          width="16" height="22" viewBox="0 0 16 22"
+          style={{ display: 'block', filter: glow, transition: 'filter 0.6s ease' }}
         >
           <path
             d="M 1 1 L 1 19 L 5.5 14.5 L 8 21 L 10 20.2 L 7.5 13.8 L 13 13.8 Z"
-            fill="white"
-            stroke="rgba(0,0,0,0.28)"
-            strokeWidth="0.7"
-            strokeLinejoin="round"
+            {...sharedPath}
           />
         </svg>
       )}
 
-      {/* ── Text / I-beam — centred on hotspot ── */}
+      {/* ── Text / I-beam — hotspot centred, same glow as arrow ── */}
       {type === 'text' && (
         <svg
-          width="20"
-          height="26"
-          viewBox="0 0 20 26"
+          width="16" height="22" viewBox="0 0 16 22"
           style={{
             display: 'block',
-            transform: 'translate(-10px, -13px)',
-            filter: 'drop-shadow(0 1px 5px rgba(0,0,0,0.95))',
-          }}
-        >
-          <line x1="3"  y1="4"  x2="17" y2="4"  stroke="white" strokeWidth="1.8" strokeLinecap="round" />
-          <line x1="10" y1="4"  x2="10" y2="22" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
-          <line x1="3"  y1="22" x2="17" y2="22" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
-        </svg>
-      )}
-
-      {/* ── Pointer / hand cursor ── */}
-      {type === 'pointer' && (
-        <svg
-          width="14"
-          height="20"
-          viewBox="0 0 14 20"
-          style={{
-            display: 'block',
-            transform: 'translate(-7px, 0px)',
-            filter: pointerGlow,
+            transform: 'translate(-8px, -11px)',
+            filter: glow,
             transition: 'filter 0.6s ease',
           }}
         >
+          {/* Top serif */}
+          <line x1="2" y1="2" x2="14" y2="2" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+          {/* Stem */}
+          <line x1="8" y1="2" x2="8" y2="20" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+          {/* Bottom serif */}
+          <line x1="2" y1="20" x2="14" y2="20" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      )}
+
+      {/* ── Pointer / hand — hotspot at finger tip, same glow as arrow ── */}
+      {type === 'pointer' && (
+        <svg
+          width="16" height="22" viewBox="0 0 16 22"
+          style={{
+            display: 'block',
+            transform: 'translate(-7px, 0px)',
+            filter: glow,
+            transition: 'filter 0.6s ease',
+          }}
+        >
+          {/*
+            Index finger: y 1.5 → 7.5  (6 px, ~30% of 21 total)
+            Palm:         y 7.5 → 21   (13.5 px)
+            Other fingers shown as three gentle bumps on the right side
+            Thumb web: concave curve on the bottom-left reconnecting to finger
+          */}
           <path
-            d="M6 1.5
-               C6 0.7 6.5 0.2 7.2 0.2
-               C7.9 0.2 8.3 0.7 8.3 1.5
-               L8.3 8
-               C8.8 7.5 9.4 7.3 10 7.5
-               C10.6 7.8 10.9 8.4 10.9 9.1
-               C11.3 8.6 11.9 8.5 12.5 8.8
-               C13 9.1 13.3 9.7 13.3 10.4
-               L13.3 12.5
-               C13.3 16 10.8 18.5 7.8 18.5
-               L5.5 18.5
-               C3.3 18.5 1.8 17.3 1 15.7
-               L0.3 12.8
-               C0 11.7 0.5 10.7 1.6 10.3
-               C2.6 9.9 3.7 10.3 4.2 11.3
-               C4.6 12.1 4.8 12.8 5.3 13.2
-               C5.5 12.2 5.8 11.2 6 10.5
-               L6 1.5Z"
-            fill="white"
-            stroke="rgba(0,0,0,0.28)"
-            strokeWidth="0.7"
-            strokeLinejoin="round"
+            d="M5.5 1.5
+               C5.5 0.7 6.1 0.2 7 0.2
+               C7.9 0.2 8.5 0.7 8.5 1.5
+               L8.5 7.5
+               C9 7 9.7 6.8 10.3 7.1
+               C10.9 7.4 11.1 8.1 11.1 8.8
+               C11.6 8.3 12.2 8.2 12.8 8.5
+               C13.3 8.9 13.5 9.5 13.5 10.2
+               L13.5 13
+               C13.5 17.2 10.9 21 7.5 21
+               L5.5 21
+               C3.4 21 1.9 19.5 1.1 17.9
+               L0.5 14.8
+               C0.2 13.6 0.7 12.4 1.8 11.9
+               C2.9 11.4 4.1 11.9 4.6 13
+               L5.5 15
+               L5.5 1.5Z"
+            {...sharedPath}
           />
         </svg>
       )}
