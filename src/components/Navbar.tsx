@@ -23,8 +23,8 @@ export default function Navbar() {
         router.push("/login");
     };
 
-    // Hide entirely on home — the centre card handles Account & Logout there
-    if (pathname === "/home") return null;
+    // Hide on home (centre card handles nav) and account (has its own back button)
+    if (pathname === "/home" || pathname === "/account") return null;
 
     // Determine theme based on route — dark on old pages
     const isDarkTheme = pathname === "/clarity" || pathname === "/communication";
@@ -45,8 +45,8 @@ export default function Navbar() {
                 <div className="hidden md:flex items-center gap-8">
                     {[
                         { label: "Home", href: "/home" },
-                        { label: "Bear", href: "/bear" },
-                        { label: "Parrot", href: "/parrot" },
+                        { label: "Zulu", href: "/bear" },
+                        { label: "Tango", href: "/parrot" },
                     ].map((item) => (
                         <Link
                             key={item.href}
