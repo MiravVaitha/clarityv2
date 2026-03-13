@@ -387,18 +387,28 @@ export default function BearPage() {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            width: "30px",
-                            height: "30px",
-                            borderRadius: "8px",
-                            color: "rgba(190,220,205,0.38)",
+                            width: "38px",
+                            height: "38px",
+                            borderRadius: "10px",
+                            color: "rgba(190,220,205,0.65)",
+                            background: "rgba(190,220,205,0.06)",
+                            border: "1px solid rgba(190,220,205,0.12)",
                             textDecoration: "none",
                             flexShrink: 0,
-                            transition: "color 0.15s",
+                            transition: "color 0.15s, background 0.15s, border-color 0.15s",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(190,220,205,0.7)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(190,220,205,0.38)")}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "rgba(190,220,205,0.95)";
+                            e.currentTarget.style.background = "rgba(190,220,205,0.12)";
+                            e.currentTarget.style.borderColor = "rgba(190,220,205,0.25)";
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "rgba(190,220,205,0.65)";
+                            e.currentTarget.style.background = "rgba(190,220,205,0.06)";
+                            e.currentTarget.style.borderColor = "rgba(190,220,205,0.12)";
+                        }}
                     >
-                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                             <path d="M3 9.5L10 3l7 6.5V17a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
                             <path d="M7 18v-6h6v6" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
                         </svg>
