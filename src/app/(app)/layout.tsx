@@ -24,8 +24,8 @@ export default function AppLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <div className={`${geistSans.variable} ${geistMono.variable}`}>
-            <div className="flex flex-col min-h-screen">
+        <div className={`${geistSans.variable} ${geistMono.variable}`} style={{ background: "#020a04", minHeight: "100vh" }}>
+            <div className="flex flex-col min-h-screen" style={{ background: "#020a04" }}>
                 <Navbar />
                 <main className="flex-1">
                     {children}
