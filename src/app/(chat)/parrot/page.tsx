@@ -91,6 +91,16 @@ function HamburgerLines({ color = "rgba(190,225,210,0.65)" }: { color?: string }
 
 // ── Component ──────────────────────────────────────────────────────
 
+function makeParrotWelcome(name: string): ChatEntry {
+    return {
+        id: "parrot-welcome",
+        type: "parrot",
+        content: name
+            ? `Hey ${name} — I'm Tango. What do you need to say, and who's it going to? Give me the situation and I'll ask a couple of quick questions. Then I'll put together a few options for you.`
+            : "Hey — I'm Tango. What do you need to say, and who's it going to? Give me the situation and I'll ask a couple of quick questions. Then I'll put together a few options for you.",
+    };
+}
+
 export default function ParrotPage() {
     const [entries, setEntries] = useState<ChatEntry[]>([]);
     const [sessionId, setSessionId] = useState<string | null>(null);
@@ -98,6 +108,8 @@ export default function ParrotPage() {
     const [input, setInput] = useState("");
     const [parrotState, setParrotState] = useState<ParrotState>("idle");
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [displayName, setDisplayName] = useState<string | null>(null);
+    const displayNameRef = useRef<string>("");
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -110,15 +122,26 @@ export default function ParrotPage() {
     // Dim the jungle when a draft just landed — focus attention on the card
     const lastEntryIsDraft = entries.length > 0 && entries[entries.length - 1].type === "draft";
 
+    // ── Fetch display name ─────────────────────────────────────────
+
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data }) => {
+            const name = data.user?.user_metadata?.display_name || "";
+            displayNameRef.current = name;
+            setDisplayName(name);
+        });
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // ── Show welcome whenever entering new-conversation state ──────
+
+    useEffect(() => {
+        if (displayName === null) return;
+        if (sessionId === null && entries.length === 0) {
+            setEntries([makeParrotWelcome(displayName)]);
+        }
+    }, [displayName]); // eslint-disable-line react-hooks/exhaustive-deps
+
     // ── Load sessions ──────────────────────────────────────────────
-
-    // ── First-visit welcome message ────────────────────────────────
-
-    const PARROT_WELCOME: ChatEntry = {
-        id: "parrot-welcome",
-        type: "parrot",
-        content: "Hey — I'm Tango. What do you need to say, and who's it going to? Give me the situation and I'll ask a couple of quick questions. Then I'll put together a few options for you.",
-    };
 
     const loadSessions = useCallback(async () => {
         const { data } = await supabase
@@ -127,14 +150,8 @@ export default function ParrotPage() {
             .eq("engine", "parrot")
             .order("created_at", { ascending: false })
             .limit(40);
-        if (data) {
-            setSessions(data);
-            // First-visit onboarding: show welcome if user has never had a Parrot session
-            if (data.length === 0) {
-                setEntries((prev) => prev.length === 0 ? [PARROT_WELCOME] : prev);
-            }
-        }
-    }, [supabase]); // eslint-disable-line react-hooks/exhaustive-deps
+        if (data) setSessions(data);
+    }, [supabase]);
 
     useEffect(() => { loadSessions(); }, [loadSessions]);
 
@@ -165,7 +182,7 @@ export default function ParrotPage() {
 
     const startNewSession = useCallback(() => {
         setSessionId(null);
-        setEntries([]);
+        setEntries([makeParrotWelcome(displayNameRef.current)]);
         setParrotState("idle");
         setTimeout(() => inputRef.current?.focus(), 100);
     }, []);

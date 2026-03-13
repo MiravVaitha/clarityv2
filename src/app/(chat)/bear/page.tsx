@@ -88,6 +88,16 @@ function HamburgerLines({ color = "rgba(200,225,210,0.65)" }: { color?: string }
 
 // ── Component ──────────────────────────────────────────────────────
 
+function makeBearWelcome(name: string): ChatEntry {
+    return {
+        id: "bear-welcome",
+        type: "bear",
+        content: name
+            ? `Hey ${name} — I'm Zulu. Tell me what's on your mind. A decision you're weighing, something you're trying to plan, or just something that feels tangled. I'll help you see it clearly.`
+            : "Hey — I'm Zulu. Tell me what's on your mind. A decision you're weighing, something you're trying to plan, or just something that feels tangled. I'll help you see it clearly.",
+    };
+}
+
 export default function BearPage() {
     const [entries, setEntries] = useState<ChatEntry[]>([]);
     const [sessionId, setSessionId] = useState<string | null>(null);
@@ -95,6 +105,8 @@ export default function BearPage() {
     const [input, setInput] = useState("");
     const [bearState, setBearState] = useState<BearState>("idle");
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [displayName, setDisplayName] = useState<string | null>(null);
+    const displayNameRef = useRef<string>("");
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -107,13 +119,24 @@ export default function BearPage() {
     // Dim the woods when a card just landed — refocuses attention
     const lastEntryIsCard = entries.length > 0 && entries[entries.length - 1].type === "card";
 
-    // ── First-visit welcome message ────────────────────────────────
+    // ── Fetch display name ─────────────────────────────────────────
 
-    const BEAR_WELCOME: ChatEntry = {
-        id: "bear-welcome",
-        type: "bear",
-        content: "Hey — I'm Zulu. Tell me what's on your mind. A decision you're weighing, something you're trying to plan, or just something that feels tangled. I'll help you see it clearly.",
-    };
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data }) => {
+            const name = data.user?.user_metadata?.display_name || "";
+            displayNameRef.current = name;
+            setDisplayName(name);
+        });
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // ── Show welcome whenever entering new-conversation state ──────
+
+    useEffect(() => {
+        if (displayName === null) return;
+        if (sessionId === null && entries.length === 0) {
+            setEntries([makeBearWelcome(displayName)]);
+        }
+    }, [displayName]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Load sessions ──────────────────────────────────────────────
 
@@ -124,14 +147,8 @@ export default function BearPage() {
             .eq("engine", "bear")
             .order("created_at", { ascending: false })
             .limit(40);
-        if (data) {
-            setSessions(data);
-            // First-visit onboarding: show welcome if user has never had a Bear session
-            if (data.length === 0) {
-                setEntries((prev) => prev.length === 0 ? [BEAR_WELCOME] : prev);
-            }
-        }
-    }, [supabase]); // eslint-disable-line react-hooks/exhaustive-deps
+        if (data) setSessions(data);
+    }, [supabase]);
 
     useEffect(() => { loadSessions(); }, [loadSessions]);
 
@@ -162,7 +179,7 @@ export default function BearPage() {
 
     const startNewSession = useCallback(() => {
         setSessionId(null);
-        setEntries([]);
+        setEntries([makeBearWelcome(displayNameRef.current)]);
         setBearState("idle");
         setTimeout(() => inputRef.current?.focus(), 100);
     }, []);
