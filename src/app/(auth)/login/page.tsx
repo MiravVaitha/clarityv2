@@ -5,14 +5,49 @@ import { useRouter } from "next/navigation";
 import BrandLogo from "@/components/BrandLogo";
 import { createClient } from "@/lib/supabase/client";
 
-type Mode = "signin" | "signup";
+type Mode = "signin" | "signup" | "forgot";
+
+function EyeIcon({ open }: { open: boolean }) {
+    return open ? (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+    ) : (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>
+    );
+}
+
+function GoogleIcon() {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+    );
+}
+
+const inputStyle = {
+    width: "100%", padding: "12px 14px", borderRadius: "11px",
+    background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)",
+    color: "rgba(215,240,225,0.9)", fontSize: "0.875rem", outline: "none",
+    fontFamily: "inherit",
+} as const;
 
 export default function Login() {
     const router = useRouter();
     const [mode, setMode] = useState<Mode>("signin");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [displayName, setDisplayName] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -25,6 +60,19 @@ export default function Login() {
         setMessage(null);
         setLoading(true);
 
+        if (mode === "forgot") {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+            });
+            if (error) {
+                setError(error.message);
+            } else {
+                setMessage("Check your email for a password reset link.");
+            }
+            setLoading(false);
+            return;
+        }
+
         if (mode === "signin") {
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
@@ -34,6 +82,11 @@ export default function Login() {
                 router.refresh();
             }
         } else {
+            if (password !== confirmPassword) {
+                setError("Passwords don't match.");
+                setLoading(false);
+                return;
+            }
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
@@ -44,11 +97,9 @@ export default function Login() {
             if (error) {
                 setError(error.message);
             } else if (data.session) {
-                // Email confirmation disabled — signed in immediately
                 router.push("/home");
                 router.refresh();
             } else {
-                // Email confirmation required
                 setMessage("Check your email to confirm your account, then sign in.");
                 setMode("signin");
             }
@@ -57,41 +108,49 @@ export default function Login() {
         setLoading(false);
     };
 
-    const toggleMode = () => {
-        setMode(m => m === "signin" ? "signup" : "signin");
+    const handleGoogleSignIn = async () => {
+        setError(null);
+        await supabase.auth.signInWithOAuth({
+            provider: "google",
+            options: { redirectTo: `${window.location.origin}/auth/callback` },
+        });
+    };
+
+    const switchMode = (next: Mode) => {
+        setMode(next);
         setError(null);
         setMessage(null);
+        setPassword("");
+        setConfirmPassword("");
+        setShowPassword(false);
+        setShowConfirmPassword(false);
     };
+
+    const submitLabel = loading ? "Please wait…"
+        : mode === "signin" ? "Sign In"
+        : mode === "signup" ? "Create Account"
+        : "Send Reset Link";
 
     return (
         <div className="fixed inset-0 flex overflow-hidden" style={{ zIndex: 0 }}>
 
-            {/* ── BEAR HALF — left background ── */}
-            <div
-                className="flex-1 relative overflow-hidden"
-                style={{ background: "linear-gradient(to bottom, #020905 0%, #041a08 45%, #06220c 100%)" }}
-            >
-                {/* Amber glow */}
+            {/* ── BEAR HALF ── */}
+            <div className="flex-1 relative overflow-hidden"
+                style={{ background: "linear-gradient(to bottom, #020905 0%, #041a08 45%, #06220c 100%)" }}>
                 <div style={{
                     position: "absolute", top: "10%", left: "10%", width: "80%", height: "70%",
                     background: "radial-gradient(ellipse at 50% 40%, rgba(140,85,15,0.2) 0%, transparent 65%)",
                     pointerEvents: "none",
                 }} />
-                {/* Trees */}
-                <svg
-                    style={{ position: "absolute", bottom: "15%", left: 0, width: "100%", opacity: 0.3 }}
-                    viewBox="0 0 600 280" preserveAspectRatio="xMidYMax meet" fill="none"
-                >
+                <svg style={{ position: "absolute", bottom: "15%", left: 0, width: "100%", opacity: 0.3 }}
+                    viewBox="0 0 600 280" preserveAspectRatio="xMidYMax meet" fill="none">
                     <path d="M0 280 L0 190 Q35 90 75 155 Q115 75 155 140 Q195 85 235 148 Q275 70 315 145 Q355 90 395 152 Q435 78 475 148 Q515 88 555 150 L600 150 L600 280 Z" fill="#0a2010"/>
                 </svg>
-                {/* Mist */}
                 <div style={{
                     position: "absolute", bottom: 0, left: 0, right: 0, height: "22%",
                     background: "linear-gradient(to top, rgba(18,55,22,0.4) 0%, transparent 100%)",
-                    animation: "mist-drift 24s ease-in-out infinite",
                     pointerEvents: "none",
                 }} />
-                {/* Bear silhouette — ghost/faded */}
                 <div style={{ position: "absolute", bottom: "12%", left: "50%", transform: "translateX(-50%)", opacity: 0.2 }}>
                     <svg width="90" height="95" viewBox="0 0 200 210" fill="none">
                         <ellipse cx="100" cy="148" rx="54" ry="52" fill="#2a1a0a"/>
@@ -106,37 +165,26 @@ export default function Login() {
                     position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
                     fontSize: "0.55rem", letterSpacing: "0.18em", textTransform: "uppercase",
                     color: "rgba(251,191,36,0.28)", fontWeight: 700, whiteSpace: "nowrap",
-                }}>
-                    Zulu · Clarity
-                </div>
+                }}>Zulu · Clarity</div>
             </div>
 
-            {/* ── PARROT HALF — right background ── */}
-            <div
-                className="flex-1 relative overflow-hidden"
-                style={{ background: "linear-gradient(to bottom, #010c03 0%, #031206 45%, #041808 100%)" }}
-            >
-                {/* Emerald glow */}
+            {/* ── PARROT HALF ── */}
+            <div className="flex-1 relative overflow-hidden"
+                style={{ background: "linear-gradient(to bottom, #010c03 0%, #031206 45%, #041808 100%)" }}>
                 <div style={{
                     position: "absolute", top: "10%", right: "10%", width: "80%", height: "70%",
                     background: "radial-gradient(ellipse at 50% 40%, rgba(40,130,25,0.22) 0%, transparent 65%)",
                     pointerEvents: "none",
                 }} />
-                {/* Trees */}
-                <svg
-                    style={{ position: "absolute", bottom: "15%", left: 0, width: "100%", opacity: 0.32 }}
-                    viewBox="0 0 600 260" preserveAspectRatio="xMidYMax meet" fill="none"
-                >
+                <svg style={{ position: "absolute", bottom: "15%", left: 0, width: "100%", opacity: 0.32 }}
+                    viewBox="0 0 600 260" preserveAspectRatio="xMidYMax meet" fill="none">
                     <path d="M0 260 L0 178 Q40 82 85 145 Q132 62 178 135 Q225 78 272 140 Q318 66 365 140 Q415 80 462 148 Q510 74 558 145 L600 145 L600 260 Z" fill="#031c0a"/>
                 </svg>
-                {/* Jungle mist */}
                 <div style={{
                     position: "absolute", bottom: 0, left: 0, right: 0, height: "20%",
                     background: "linear-gradient(to top, rgba(18,68,22,0.38) 0%, transparent 100%)",
-                    animation: "jungle-mist 20s ease-in-out infinite",
                     pointerEvents: "none",
                 }} />
-                {/* Parrot silhouette — ghost/faded */}
                 <div style={{ position: "absolute", bottom: "12%", left: "50%", transform: "translateX(-50%)", opacity: 0.2 }}>
                     <svg width="80" height="100" viewBox="0 0 200 250" fill="none">
                         <ellipse cx="100" cy="140" rx="42" ry="47" fill="#16a34a"/>
@@ -151,24 +199,19 @@ export default function Login() {
                     position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
                     fontSize: "0.55rem", letterSpacing: "0.18em", textTransform: "uppercase",
                     color: "rgba(52,211,153,0.28)", fontWeight: 700, whiteSpace: "nowrap",
-                }}>
-                    Tango · Drafts
-                </div>
+                }}>Tango · Drafts</div>
             </div>
 
-            {/* ── World divider — single vertical line through center ── */}
+            {/* ── Divider line ── */}
             <div style={{
-                position: "absolute", top: 0, bottom: 0, left: "50%",
-                width: "1px",
+                position: "absolute", top: 0, bottom: 0, left: "50%", width: "1px",
                 background: "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.07) 15%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.07) 85%, transparent 100%)",
                 zIndex: 10, pointerEvents: "none",
             }} />
 
-            {/* ── AUTH FORM — centred over both halves ── */}
-            <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                style={{ zIndex: 20, width: "360px", maxWidth: "calc(100vw - 32px)" }}
-            >
+            {/* ── AUTH FORM ── */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                style={{ zIndex: 20, width: "360px", maxWidth: "calc(100vw - 32px)" }}>
                 <div style={{
                     background: "rgba(3,12,6,0.92)",
                     backdropFilter: "blur(28px)",
@@ -178,7 +221,6 @@ export default function Login() {
                     padding: "36px 32px",
                     boxShadow: "0 24px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)",
                 }}>
-                    {/* Logo */}
                     <div style={{ textAlign: "center", marginBottom: "6px" }}>
                         <BrandLogo size="nav" variant="light" centered={true} clickable={false} />
                     </div>
@@ -191,90 +233,135 @@ export default function Login() {
                     </p>
 
                     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+
+                        {/* Display name — signup only */}
                         {mode === "signup" && (
-                            <input
-                                type="text"
-                                placeholder="Display name"
-                                value={displayName}
-                                onChange={e => setDisplayName(e.target.value)}
-                                style={{
-                                    width: "100%", padding: "12px 14px", borderRadius: "11px",
-                                    background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)",
-                                    color: "rgba(215,240,225,0.9)", fontSize: "0.875rem", outline: "none",
-                                    fontFamily: "inherit",
-                                }}
-                            />
+                            <input type="text" placeholder="Display name" value={displayName}
+                                onChange={e => setDisplayName(e.target.value)} style={inputStyle} />
                         )}
 
-                        <input
-                            type="email"
-                            placeholder="Email address"
-                            value={email}
-                            onChange={e => setEmail(e.target.value)}
-                            required
-                            style={{
-                                width: "100%", padding: "12px 14px", borderRadius: "11px",
-                                background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)",
-                                color: "rgba(215,240,225,0.9)", fontSize: "0.875rem", outline: "none",
-                                fontFamily: "inherit",
-                            }}
-                        />
+                        {/* Email */}
+                        <input type="email" placeholder="Email address" value={email}
+                            onChange={e => setEmail(e.target.value)} required style={inputStyle} />
 
-                        <input
-                            type="password"
-                            placeholder="Password"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            required
-                            minLength={6}
-                            style={{
-                                width: "100%", padding: "12px 14px", borderRadius: "11px",
-                                background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)",
-                                color: "rgba(215,240,225,0.9)", fontSize: "0.875rem", outline: "none",
-                                fontFamily: "inherit",
-                            }}
-                        />
-
-                        {error && (
-                            <p style={{ color: "rgba(248,113,113,0.9)", fontSize: "0.8rem", textAlign: "center" }}>{error}</p>
-                        )}
-                        {message && (
-                            <p style={{ color: "rgba(52,211,153,0.9)", fontSize: "0.8rem", textAlign: "center" }}>{message}</p>
+                        {/* Password */}
+                        {mode !== "forgot" && (
+                            <div style={{ position: "relative" }}>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Password" value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    required minLength={6}
+                                    style={{ ...inputStyle, paddingRight: "44px" }}
+                                />
+                                <button type="button" onClick={() => setShowPassword(v => !v)} tabIndex={-1}
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                    style={{
+                                        position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                                        background: "none", border: "none", cursor: "pointer", padding: "2px",
+                                        color: "rgba(165,210,190,0.45)", display: "flex", alignItems: "center",
+                                    }}>
+                                    <EyeIcon open={showPassword} />
+                                </button>
+                            </div>
                         )}
 
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            style={{
-                                width: "100%", padding: "13px", borderRadius: "12px", border: "none",
-                                background: loading
-                                    ? "rgba(255,255,255,0.1)"
-                                    : "linear-gradient(135deg, rgba(251,191,36,0.92) 0%, rgba(52,211,153,0.88) 100%)",
-                                color: loading ? "rgba(255,255,255,0.35)" : "#0a1a0c",
-                                fontWeight: 700, fontSize: "0.9rem",
-                                cursor: loading ? "not-allowed" : "pointer",
-                                letterSpacing: "0.02em", fontFamily: "inherit",
-                                marginTop: "4px", transition: "opacity 0.2s",
-                            }}
-                        >
-                            {loading ? "Please wait…" : mode === "signin" ? "Sign In" : "Create Account"}
+                        {/* Confirm password — signup only */}
+                        {mode === "signup" && (
+                            <div style={{ position: "relative" }}>
+                                <input
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    placeholder="Confirm password" value={confirmPassword}
+                                    onChange={e => setConfirmPassword(e.target.value)}
+                                    required minLength={6}
+                                    style={{ ...inputStyle, paddingRight: "44px" }}
+                                />
+                                <button type="button" onClick={() => setShowConfirmPassword(v => !v)} tabIndex={-1}
+                                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                                    style={{
+                                        position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                                        background: "none", border: "none", cursor: "pointer", padding: "2px",
+                                        color: "rgba(165,210,190,0.45)", display: "flex", alignItems: "center",
+                                    }}>
+                                    <EyeIcon open={showConfirmPassword} />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Forgot password link */}
+                        {mode === "signin" && (
+                            <div style={{ textAlign: "right", marginTop: "-4px" }}>
+                                <button type="button" onClick={() => switchMode("forgot")} style={{
+                                    background: "none", border: "none", cursor: "pointer",
+                                    fontSize: "0.72rem", color: "rgba(165,210,190,0.4)",
+                                    textDecoration: "underline", textUnderlineOffset: "3px", fontFamily: "inherit",
+                                }}>
+                                    Forgot password?
+                                </button>
+                            </div>
+                        )}
+
+                        {error && <p style={{ color: "rgba(248,113,113,0.9)", fontSize: "0.8rem", textAlign: "center" }}>{error}</p>}
+                        {message && <p style={{ color: "rgba(52,211,153,0.9)", fontSize: "0.8rem", textAlign: "center" }}>{message}</p>}
+
+                        <button type="submit" disabled={loading} style={{
+                            width: "100%", padding: "13px", borderRadius: "12px", border: "none",
+                            background: loading ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, rgba(251,191,36,0.92) 0%, rgba(52,211,153,0.88) 100%)",
+                            color: loading ? "rgba(255,255,255,0.35)" : "#0a1a0c",
+                            fontWeight: 700, fontSize: "0.9rem",
+                            cursor: loading ? "not-allowed" : "pointer",
+                            letterSpacing: "0.02em", fontFamily: "inherit",
+                            marginTop: "4px", transition: "opacity 0.2s",
+                        }}>
+                            {submitLabel}
                         </button>
                     </form>
 
-                    <div style={{ marginTop: "18px", textAlign: "center" }}>
-                        <button
-                            onClick={toggleMode}
-                            style={{
+                    {/* Google — not on forgot */}
+                    {mode !== "forgot" && (
+                        <>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "16px 0" }}>
+                                <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.08)" }} />
+                                <span style={{ fontSize: "0.7rem", color: "rgba(165,210,190,0.3)", whiteSpace: "nowrap" }}>or</span>
+                                <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.08)" }} />
+                            </div>
+                            <button type="button" onClick={handleGoogleSignIn} style={{
+                                width: "100%", padding: "12px", borderRadius: "12px",
+                                background: "rgba(255,255,255,0.06)",
+                                border: "1px solid rgba(255,255,255,0.11)",
+                                color: "rgba(215,240,225,0.85)", fontSize: "0.875rem",
+                                cursor: "pointer", fontFamily: "inherit", fontWeight: 500,
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+                                transition: "background 0.2s",
+                            }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}>
+                                <GoogleIcon />
+                                Continue with Google
+                            </button>
+                        </>
+                    )}
+
+                    {/* Mode switcher */}
+                    <div style={{ marginTop: "16px", textAlign: "center", display: "flex", flexDirection: "column", gap: "6px" }}>
+                        {mode !== "signup" && (
+                            <button onClick={() => switchMode("signup")} style={{
                                 background: "none", border: "none", cursor: "pointer",
                                 fontSize: "0.78rem", color: "rgba(165,210,190,0.48)",
-                                textDecoration: "underline", textUnderlineOffset: "3px",
-                                fontFamily: "inherit",
-                            }}
-                        >
-                            {mode === "signin"
-                                ? "Don't have an account? Sign up"
-                                : "Already have an account? Sign in"}
-                        </button>
+                                textDecoration: "underline", textUnderlineOffset: "3px", fontFamily: "inherit",
+                            }}>
+                                Don&apos;t have an account? Sign up
+                            </button>
+                        )}
+                        {mode !== "signin" && (
+                            <button onClick={() => switchMode("signin")} style={{
+                                background: "none", border: "none", cursor: "pointer",
+                                fontSize: "0.78rem", color: "rgba(165,210,190,0.48)",
+                                textDecoration: "underline", textUnderlineOffset: "3px", fontFamily: "inherit",
+                            }}>
+                                Back to sign in
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
