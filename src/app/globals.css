@@ -203,12 +203,26 @@
   background: rgba(160, 190, 120, 0.2);
   border-radius: 99px;
   transition: background 0.2s;
+  cursor: none;
 }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   background: rgba(160, 190, 120, 0.45);
+  cursor: none;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(160, 190, 120, 0.65);
+  cursor: none;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: rgba(160, 190, 120, 0.65);
+  cursor: none;
+}
+
+/* Keep custom cursor active during scrollbar drag */
+@media (pointer: fine) {
+  ::-webkit-scrollbar-thumb { cursor: none !important; }
+  ::-webkit-scrollbar { cursor: none !important; }
+  ::-webkit-scrollbar-track { cursor: none !important; }
 }
 
 /* ── Bear page responsive layout ── */
