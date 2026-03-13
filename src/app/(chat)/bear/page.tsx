@@ -7,6 +7,7 @@ import BearCharacter from "@/components/bear/BearCharacter";
 import ChatMessage from "@/components/bear/ChatMessage";
 import InlineClarityCard from "@/components/bear/InlineClarityCard";
 import SessionSidebar from "@/components/bear/SessionSidebar";
+import CustomScrollbar from "@/components/CustomScrollbar";
 import type { ClarifyOutput } from "@/lib/schemas";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -433,11 +434,9 @@ export default function BearPage() {
                 </div>
 
                 {/* Messages area */}
-                <div
-                    className="custom-scrollbar"
-                    style={{
-                        flex: 1,
-                        overflowY: "auto",
+                <CustomScrollbar
+                    outerStyle={{ flex: 1 }}
+                    innerStyle={{
                         padding: hasMessages ? "20px 18px 12px" : "0",
                         display: "flex",
                         flexDirection: "column",
@@ -528,7 +527,7 @@ export default function BearPage() {
                             <div ref={messagesEndRef} />
                         </div>
                     )}
-                </div>
+                </CustomScrollbar>
 
                 {/* Input bar */}
                 <div

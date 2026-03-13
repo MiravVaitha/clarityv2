@@ -1,5 +1,7 @@
 "use client";
 
+import CustomScrollbar from "@/components/CustomScrollbar";
+
 interface Session {
     id: string;
     title: string | null;
@@ -120,7 +122,7 @@ export default function SessionSidebar({
                 </div>
 
                 {/* Session list */}
-                <div className="custom-scrollbar" style={{ flex: 1, overflowY: "auto", padding: "0 8px 16px" }}>
+                <CustomScrollbar outerStyle={{ flex: 1 }} innerStyle={{ padding: "0 8px 16px" }}>
                     {sessions.length === 0 ? (
                         <p
                             style={{
@@ -173,7 +175,7 @@ export default function SessionSidebar({
                             );
                         })
                     )}
-                </div>
+                </CustomScrollbar>
             </div>
         </>
     );

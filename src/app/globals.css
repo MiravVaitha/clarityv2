@@ -188,42 +188,6 @@
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Custom themed scrollbar — sidebar & chat */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(160, 190, 120, 0.25) transparent;
-}
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(160, 190, 120, 0.2);
-  border-radius: 99px;
-  transition: background 0.2s;
-  cursor: none;
-}
-.custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background: rgba(160, 190, 120, 0.45);
-  cursor: none;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(160, 190, 120, 0.65);
-  cursor: none;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:active {
-  background: rgba(160, 190, 120, 0.65);
-  cursor: none;
-}
-
-/* Keep custom cursor active during scrollbar drag */
-@media (pointer: fine) {
-  ::-webkit-scrollbar-thumb { cursor: none !important; }
-  ::-webkit-scrollbar { cursor: none !important; }
-  ::-webkit-scrollbar-track { cursor: none !important; }
-}
 
 /* ── Bear page responsive layout ── */
 .bear-left-panel {

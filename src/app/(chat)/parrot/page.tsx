@@ -7,6 +7,7 @@ import ParrotCharacter from "@/components/parrot/ParrotCharacter";
 import ChatMessage from "@/components/parrot/ChatMessage";
 import InlineDraftCard from "@/components/parrot/InlineDraftCard";
 import SessionSidebar from "@/components/parrot/SessionSidebar";
+import CustomScrollbar from "@/components/CustomScrollbar";
 import type { ParrotDraft } from "@/lib/parrotSchemas";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -436,11 +437,9 @@ export default function ParrotPage() {
                 </div>
 
                 {/* Messages area */}
-                <div
-                    className="custom-scrollbar"
-                    style={{
-                        flex: 1,
-                        overflowY: "auto",
+                <CustomScrollbar
+                    outerStyle={{ flex: 1 }}
+                    innerStyle={{
                         padding: hasMessages ? "20px 18px 12px" : "0",
                         display: "flex",
                         flexDirection: "column",
@@ -530,7 +529,7 @@ export default function ParrotPage() {
                             <div ref={messagesEndRef} />
                         </div>
                     )}
-                </div>
+                </CustomScrollbar>
 
                 {/* Input bar */}
                 <div
