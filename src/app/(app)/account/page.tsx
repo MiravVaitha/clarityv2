@@ -86,24 +86,39 @@ export default function AccountPage() {
             {/* Back to Home */}
             <Link
                 href="/home"
+                aria-label="Home"
                 style={{
                     position: "absolute",
                     top: "28px",
                     left: "28px",
                     display: "flex",
                     alignItems: "center",
-                    gap: "6px",
-                    fontSize: "0.78rem",
-                    color: "rgba(175,215,198,0.45)",
+                    justifyContent: "center",
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "10px",
+                    color: "rgba(175,215,198,0.65)",
+                    background: "rgba(175,215,198,0.06)",
+                    border: "1px solid rgba(175,215,198,0.12)",
                     textDecoration: "none",
-                    letterSpacing: "0.04em",
-                    transition: "color 0.18s",
+                    transition: "color 0.15s, background 0.15s, border-color 0.15s",
                     zIndex: 10,
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(175,215,198,0.9)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(175,215,198,0.45)")}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "rgba(175,215,198,0.95)";
+                    e.currentTarget.style.background = "rgba(175,215,198,0.12)";
+                    e.currentTarget.style.borderColor = "rgba(175,215,198,0.25)";
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "rgba(175,215,198,0.65)";
+                    e.currentTarget.style.background = "rgba(175,215,198,0.06)";
+                    e.currentTarget.style.borderColor = "rgba(175,215,198,0.12)";
+                }}
             >
-                ← Home
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                    <path d="M3 9.5L10 3l7 6.5V17a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                    <path d="M7 18v-6h6v6" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                </svg>
             </Link>
 
             {/* Card */}
