@@ -434,7 +434,7 @@ export default function BearPage() {
 
                 {/* Messages area */}
                 <div
-                    className="no-scrollbar"
+                    className="custom-scrollbar"
                     style={{
                         flex: 1,
                         overflowY: "auto",

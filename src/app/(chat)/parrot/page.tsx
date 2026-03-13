@@ -437,7 +437,7 @@ export default function ParrotPage() {
 
                 {/* Messages area */}
                 <div
-                    className="no-scrollbar"
+                    className="custom-scrollbar"
                     style={{
                         flex: 1,
                         overflowY: "auto",

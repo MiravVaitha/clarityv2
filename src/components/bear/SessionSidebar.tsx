@@ -120,7 +120,7 @@ export default function SessionSidebar({
                 </div>
 
                 {/* Session list */}
-                <div style={{ flex: 1, overflowY: "auto", padding: "0 8px 16px" }}>
+                <div className="custom-scrollbar" style={{ flex: 1, overflowY: "auto", padding: "0 8px 16px" }}>
                     {sessions.length === 0 ? (
                         <p
                             style={{
