@@ -92,9 +92,45 @@ export function buildParrotPrompt(
     history: ParrotHistoryMessage[],
     latestMessage: string
 ): string {
+    // Count drafts generated and questions asked since the last draft
+    let lastDraftIndex = -1;
+    let totalDraftsGenerated = 0;
+
+    for (let i = 0; i < history.length; i++) {
+        if (history[i].role === 'parrot') {
+            try {
+                const parsed = JSON.parse(history[i].content);
+                if (parsed.response_type === 'draft') {
+                    lastDraftIndex = i;
+                    totalDraftsGenerated++;
+                }
+            } catch { /* not JSON */ }
+        }
+    }
+
+    const startIndex = lastDraftIndex === -1 ? 0 : lastDraftIndex + 1;
+    let questionsSinceLast = 0;
+    for (let i = startIndex; i < history.length; i++) {
+        if (history[i].role === 'parrot') {
+            try {
+                const parsed = JSON.parse(history[i].content);
+                if (parsed.response_type === 'chat') questionsSinceLast++;
+            } catch { /* not JSON */ }
+        }
+    }
+
+    const minNeeded = totalDraftsGenerated === 0 ? 4 : 3;
+    const canGenerate = questionsSinceLast >= minNeeded;
+    const remaining = minNeeded - questionsSinceLast;
+
+    const stateBlock = canGenerate
+        ? `[STATE: ${questionsSinceLast} question(s) asked since last draft. You have enough context — you MAY generate drafts if warranted. Direct commands always execute immediately.]`
+        : `[STATE: ${questionsSinceLast} question(s) asked since last draft. You MUST ask ${remaining} more question(s) before generating drafts. Do NOT generate drafts this turn — ask a question instead. Exception: direct edit commands execute immediately.]`;
+
     const lines = history.map(m =>
         `${m.role === 'user' ? 'User' : 'Parrot'}: ${m.content}`
     );
     lines.push(`User: ${latestMessage}`);
-    return lines.join('\n');
+
+    return `${stateBlock}\n\n${lines.join('\n')}`;
 }

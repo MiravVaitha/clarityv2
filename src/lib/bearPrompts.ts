@@ -94,9 +94,45 @@ export function buildBearPrompt(
     history: BearHistoryMessage[],
     latestMessage: string
 ): string {
+    // Count cards generated and questions asked since the last card
+    let lastCardIndex = -1;
+    let totalCardsGenerated = 0;
+
+    for (let i = 0; i < history.length; i++) {
+        if (history[i].role === 'bear') {
+            try {
+                const parsed = JSON.parse(history[i].content);
+                if (parsed.response_type === 'card') {
+                    lastCardIndex = i;
+                    totalCardsGenerated++;
+                }
+            } catch { /* not JSON */ }
+        }
+    }
+
+    const startIndex = lastCardIndex === -1 ? 0 : lastCardIndex + 1;
+    let questionsSinceLast = 0;
+    for (let i = startIndex; i < history.length; i++) {
+        if (history[i].role === 'bear') {
+            try {
+                const parsed = JSON.parse(history[i].content);
+                if (parsed.response_type === 'chat') questionsSinceLast++;
+            } catch { /* not JSON */ }
+        }
+    }
+
+    const minNeeded = totalCardsGenerated === 0 ? 4 : 3;
+    const canGenerate = questionsSinceLast >= minNeeded;
+    const remaining = minNeeded - questionsSinceLast;
+
+    const stateBlock = canGenerate
+        ? `[STATE: ${questionsSinceLast} question(s) asked since last card. You have enough context — you MAY generate a card if warranted. Direct commands always execute immediately.]`
+        : `[STATE: ${questionsSinceLast} question(s) asked since last card. You MUST ask ${remaining} more question(s) before generating a card. Do NOT generate a card this turn — ask a question instead. Exception: direct edit commands execute immediately.]`;
+
     const lines = history.map(m =>
         `${m.role === 'user' ? 'User' : 'Bear'}: ${m.content}`
     );
     lines.push(`User: ${latestMessage}`);
-    return lines.join('\n');
+
+    return `${stateBlock}\n\n${lines.join('\n')}`;
 }
