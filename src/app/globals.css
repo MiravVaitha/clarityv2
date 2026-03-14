@@ -184,13 +184,10 @@
   100% { opacity: 1; transform: translateY(0);    }
 }
 
-/* ── Page transitions ── */
-@keyframes page-fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0);    }
-}
-.page-transition {
-  animation: page-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+/* ── Page transitions — overlay fades out over content ── */
+@keyframes page-overlay-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 
 /* Hides scrollbar visually while keeping scroll functionality */
