@@ -102,6 +102,7 @@ function makeBearWelcome(name: string): ChatEntry {
 export default function BearPage() {
     const [entries, setEntries] = useState<ChatEntry[]>([]);
     const [sessionId, setSessionId] = useState<string | null>(null);
+    const [sessionTitle, setSessionTitle] = useState<string | null>(null);
     const [sessions, setSessions] = useState<Session[]>([]);
     const [input, setInput] = useState("");
     const [bearState, setBearState] = useState<BearState>("idle");
@@ -163,6 +164,7 @@ export default function BearPage() {
 
     const loadSession = useCallback(async (id: string) => {
         setSessionId(id);
+        setSessionTitle(sessions.find((s) => s.id === id)?.title ?? null);
         setEntries([]);
         setBearState("idle");
 
@@ -180,6 +182,7 @@ export default function BearPage() {
 
     const startNewSession = useCallback(() => {
         setSessionId(null);
+        setSessionTitle(null);
         setEntries([makeBearWelcome(displayNameRef.current)]);
         setBearState("idle");
         setTimeout(() => inputRef.current?.focus(), 100);
@@ -224,6 +227,7 @@ export default function BearPage() {
 
             if (!sessionId) {
                 setSessionId(data.session_id);
+                if (data.title) setSessionTitle(data.title);
                 loadSessions();
             }
 
@@ -249,6 +253,12 @@ export default function BearPage() {
             setTimeout(() => inputRef.current?.focus(), 100);
         }
     }, [input, isSending, entries, sessionId, loadSessions]);
+
+    const renameSession = useCallback(async (id: string, newTitle: string) => {
+        await supabase.from("sessions").update({ title: newTitle }).eq("id", id);
+        setSessions((prev) => prev.map((s) => s.id === id ? { ...s, title: newTitle } : s));
+        if (id === sessionId) setSessionTitle(newTitle);
+    }, [supabase, sessionId]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -281,6 +291,7 @@ export default function BearPage() {
                 activeSessionId={sessionId}
                 onSelectSession={loadSession}
                 onNewSession={startNewSession}
+                onRenameSession={renameSession}
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
             />
@@ -394,7 +405,7 @@ export default function BearPage() {
                             textAlign: "center",
                         }}
                     >
-                        {sessionId ? "Session" : "New conversation"}
+                        {sessionTitle ?? "New conversation"}
                     </span>
 
                     {/* Home button — right side */}

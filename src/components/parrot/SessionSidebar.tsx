@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import CustomScrollbar from "@/components/CustomScrollbar";
 
 interface Session {
@@ -13,6 +14,7 @@ interface SessionSidebarProps {
     activeSessionId: string | null;
     onSelectSession: (id: string) => void;
     onNewSession: () => void;
+    onRenameSession: (id: string, newTitle: string) => void;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -32,9 +34,31 @@ export default function SessionSidebar({
     activeSessionId,
     onSelectSession,
     onNewSession,
+    onRenameSession,
     isOpen,
     onClose,
 }: SessionSidebarProps) {
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editValue, setEditValue] = useState("");
+    const editRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (editingId) editRef.current?.focus();
+    }, [editingId]);
+
+    function startEditing(s: Session, e: React.MouseEvent) {
+        e.stopPropagation();
+        setEditingId(s.id);
+        setEditValue(s.title ?? "");
+    }
+
+    function commitEdit() {
+        if (editingId && editValue.trim()) {
+            onRenameSession(editingId, editValue.trim());
+        }
+        setEditingId(null);
+    }
+
     return (
         <>
             {/* Backdrop */}
@@ -137,10 +161,11 @@ export default function SessionSidebar({
                     ) : (
                         sessions.map((s) => {
                             const isActive = s.id === activeSessionId;
+                            const isEditing = s.id === editingId;
                             return (
                                 <button
                                     key={s.id}
-                                    onClick={() => { onSelectSession(s.id); onClose(); }}
+                                    onClick={() => { if (!isEditing) { onSelectSession(s.id); onClose(); } }}
                                     style={{
                                         width: "100%",
                                         padding: "10px 12px",
@@ -151,22 +176,79 @@ export default function SessionSidebar({
                                             : "1px solid transparent",
                                         color: isActive ? "rgba(220,248,238,0.95)" : "rgba(190,225,210,0.72)",
                                         fontSize: "0.8125rem",
-                                        cursor: "pointer",
+                                        cursor: isEditing ? "default" : "pointer",
                                         textAlign: "left",
                                         marginBottom: "2px",
                                         lineHeight: "1.4",
+                                        position: "relative",
                                     }}
                                 >
                                     <div
                                         style={{
-                                            fontWeight: isActive ? 600 : 400,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "6px",
                                             marginBottom: "2px",
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                            whiteSpace: "nowrap",
                                         }}
                                     >
-                                        {s.title ?? "Untitled session"}
+                                        {isEditing ? (
+                                            <input
+                                                ref={editRef}
+                                                value={editValue}
+                                                onChange={(e) => setEditValue(e.target.value)}
+                                                onBlur={commitEdit}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") commitEdit();
+                                                    if (e.key === "Escape") setEditingId(null);
+                                                }}
+                                                onClick={(e) => e.stopPropagation()}
+                                                style={{
+                                                    flex: 1,
+                                                    minWidth: 0,
+                                                    background: "rgba(52,211,153,0.08)",
+                                                    border: "1px solid rgba(52,211,153,0.3)",
+                                                    borderRadius: "4px",
+                                                    color: "rgba(220,248,238,0.95)",
+                                                    fontSize: "0.8125rem",
+                                                    fontWeight: isActive ? 600 : 400,
+                                                    padding: "2px 6px",
+                                                    outline: "none",
+                                                    fontFamily: "inherit",
+                                                }}
+                                            />
+                                        ) : (
+                                            <>
+                                                <div
+                                                    style={{
+                                                        flex: 1,
+                                                        fontWeight: isActive ? 600 : 400,
+                                                        overflow: "hidden",
+                                                        textOverflow: "ellipsis",
+                                                        whiteSpace: "nowrap",
+                                                    }}
+                                                >
+                                                    {s.title ?? "Untitled session"}
+                                                </div>
+                                                <span
+                                                    onClick={(e) => startEditing(s, e)}
+                                                    role="button"
+                                                    aria-label="Rename session"
+                                                    style={{
+                                                        flexShrink: 0,
+                                                        opacity: 0.35,
+                                                        cursor: "pointer",
+                                                        fontSize: "0.7rem",
+                                                        padding: "2px 4px",
+                                                        borderRadius: "3px",
+                                                        transition: "opacity 0.15s",
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.8"; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.35"; }}
+                                                >
+                                                    ✎
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
                                     <div style={{ color: "rgba(130,180,160,0.5)", fontSize: "0.75rem" }}>
                                         {formatDate(s.created_at)}

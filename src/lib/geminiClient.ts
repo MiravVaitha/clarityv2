@@ -99,6 +99,29 @@ function extractJSON(text: string): any {
     }
 }
 
+/**
+ * Generate a short session title from the user's first message.
+ * Returns a 3-6 word title. Falls back to a trimmed message on failure.
+ */
+export async function generateSessionTitle(message: string): Promise<string> {
+    const fallback = message.slice(0, 50) + (message.length > 50 ? "…" : "");
+    try {
+        const ai = getGenAI();
+        const result: any = await Promise.race([
+            (ai as any).models.generateContent({
+                model: MODEL_NAME,
+                contents: [{ role: "user", parts: [{ text: `Summarize this in 3-6 words as a short chat title. No quotes, no punctuation at the end. Just the title.\n\n"${message.slice(0, 300)}"` }] }],
+                config: { maxOutputTokens: 80, thinkingConfig: { thinkingBudget: 0 } },
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+        ]);
+        const text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        return text && text.length > 0 && text.length < 80 ? text : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
 export async function generateStructuredData<T>(
     systemPrompt: string,
     userPrompt: string,

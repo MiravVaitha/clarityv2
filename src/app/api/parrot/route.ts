@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { ParrotRequestSchema, ParrotAIResponseSchema } from '@/lib/parrotSchemas';
 import { PARROT_SYSTEM_PROMPT, buildParrotPrompt } from '@/lib/parrotPrompts';
-import { generateStructuredData } from '@/lib/geminiClient';
+import { generateStructuredData, generateSessionTitle } from '@/lib/geminiClient';
 
 const DEBUG = process.env.DEBUG_AI === 'true';
 
@@ -32,11 +32,12 @@ export async function POST(request: NextRequest) {
 
         // 3. Create a new session if none provided (first message)
         let activeSessionId = session_id;
+        let isNewSession = false;
         if (!activeSessionId) {
-            const title = message.slice(0, 60) + (message.length > 60 ? '...' : '');
+            const placeholder = message.slice(0, 60) + (message.length > 60 ? '...' : '');
             const { data: session, error: sessionError } = await supabase
                 .from('sessions')
-                .insert({ user_id: user.id, engine: 'parrot', title })
+                .insert({ user_id: user.id, engine: 'parrot', title: placeholder })
                 .select('id')
                 .single();
 
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ error: 'Couldn\'t open a fresh conversation. Try again in a moment.' }, { status: 500 });
             }
             activeSessionId = session.id;
+            isNewSession = true;
         }
 
         // 4. Save the user's message
@@ -107,9 +109,17 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 8. Return the response to the client
+        // 8. Generate a title for new sessions (fire-and-forget DB update)
+        let generatedTitle: string | null = null;
+        if (isNewSession) {
+            generatedTitle = await generateSessionTitle(message);
+            supabase.from('sessions').update({ title: generatedTitle }).eq('id', activeSessionId).then();
+        }
+
+        // 9. Return the response to the client
         return NextResponse.json({
             session_id: activeSessionId,
+            ...(generatedTitle ? { title: generatedTitle } : {}),
             response_type: aiResponse.response_type,
             message: aiResponse.message,
             draft: aiResponse.draft ?? null,
