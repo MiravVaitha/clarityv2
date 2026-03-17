@@ -102,7 +102,6 @@ function makeBearWelcome(name: string): ChatEntry {
 export default function BearPage() {
     const [entries, setEntries] = useState<ChatEntry[]>([]);
     const [sessionId, setSessionId] = useState<string | null>(null);
-    const [sessionTitle, setSessionTitle] = useState<string | null>(null);
     const [sessions, setSessions] = useState<Session[]>([]);
     const [input, setInput] = useState("");
     const [bearState, setBearState] = useState<BearState>("idle");
@@ -119,6 +118,7 @@ export default function BearPage() {
 
     const hasMessages = entries.length > 0;
     const isSending = bearState === "thinking";
+    const sessionTitle = sessions.find((s) => s.id === sessionId)?.title ?? null;
     // Dim the woods when a card just landed — refocuses attention
     const lastEntryIsCard = entries.length > 0 && entries[entries.length - 1].type === "card";
 
@@ -165,7 +165,6 @@ export default function BearPage() {
 
     const loadSession = useCallback(async (id: string) => {
         setSessionId(id);
-        setSessionTitle(sessionsRef.current.find((s) => s.id === id)?.title ?? null);
         setEntries([]);
         setBearState("idle");
 
@@ -183,7 +182,6 @@ export default function BearPage() {
 
     const startNewSession = useCallback(() => {
         setSessionId(null);
-        setSessionTitle(null);
         setEntries([makeBearWelcome(displayNameRef.current)]);
         setBearState("idle");
         setTimeout(() => inputRef.current?.focus(), 100);
@@ -228,7 +226,11 @@ export default function BearPage() {
 
             if (!sessionId) {
                 setSessionId(data.session_id);
-                if (data.title) setSessionTitle(data.title);
+                if (data.title) {
+                    const newSession = { id: data.session_id, title: data.title, created_at: new Date().toISOString() };
+                    setSessions((prev) => [newSession, ...prev]);
+                    sessionsRef.current = [newSession, ...sessionsRef.current];
+                }
                 loadSessions();
             }
 
@@ -257,9 +259,12 @@ export default function BearPage() {
 
     const renameSession = useCallback(async (id: string, newTitle: string) => {
         await supabase.from("sessions").update({ title: newTitle }).eq("id", id);
-        setSessions((prev) => prev.map((s) => s.id === id ? { ...s, title: newTitle } : s));
-        if (id === sessionId) setSessionTitle(newTitle);
-    }, [supabase, sessionId]);
+        setSessions((prev) => {
+            const updated = prev.map((s) => s.id === id ? { ...s, title: newTitle } : s);
+            sessionsRef.current = updated;
+            return updated;
+        });
+    }, [supabase]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
