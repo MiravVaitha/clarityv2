@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         let generatedTitle: string | null = null;
         if (isNewSession) {
             generatedTitle = await generateSessionTitle(message);
-            supabase.from('sessions').update({ title: generatedTitle }).eq('id', activeSessionId).then();
+            await supabase.from('sessions').update({ title: generatedTitle }).eq('id', activeSessionId);
         }
 
         // 9. Return the response to the client
