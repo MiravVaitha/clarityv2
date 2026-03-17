@@ -115,6 +115,7 @@ export default function ParrotPage() {
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const sessionsRef = useRef<Session[]>([]);
     const supabase = createClient();
 
     // ── Derived state ──────────────────────────────────────────────
@@ -152,7 +153,7 @@ export default function ParrotPage() {
             .eq("engine", "parrot")
             .order("created_at", { ascending: false })
             .limit(40);
-        if (data) setSessions(data);
+        if (data) { setSessions(data); sessionsRef.current = data; }
     }, [supabase]);
 
     useEffect(() => { loadSessions(); }, [loadSessions]);
@@ -167,7 +168,7 @@ export default function ParrotPage() {
 
     const loadSession = useCallback(async (id: string) => {
         setSessionId(id);
-        setSessionTitle(sessions.find((s) => s.id === id)?.title ?? null);
+        setSessionTitle(sessionsRef.current.find((s) => s.id === id)?.title ?? null);
         setEntries([]);
         setParrotState("idle");
 
