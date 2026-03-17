@@ -8,7 +8,7 @@ export async function POST() {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+        return NextResponse.json({ error: "You'll need to sign in before we can do that." }, { status: 401 });
     }
 
     // 2. Delete profile data first (RLS allows users to delete their own rows)
@@ -18,7 +18,7 @@ export async function POST() {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
         return NextResponse.json(
-            { error: "Account deletion is not configured yet. Please contact support." },
+            { error: "Account deletion isn't available right now. Please reach out to support." },
             { status: 503 }
         );
     }
@@ -32,7 +32,7 @@ export async function POST() {
     const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
 
     if (deleteError) {
-        return NextResponse.json({ error: deleteError.message }, { status: 500 });
+        return NextResponse.json({ error: "Something went wrong while deleting your account. Please try again or contact support." }, { status: 500 });
     }
 
     // 4. Sign the user out of the current session

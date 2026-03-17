@@ -214,7 +214,7 @@ export default function BearPage() {
                 const err = await res.json().catch(() => ({}));
                 setEntries((prev) => [
                     ...prev,
-                    { id: uid(), type: "bear", content: err.error ?? "Something went wrong. Zulu will be back shortly." },
+                    { id: uid(), type: "bear", content: err.error ?? "Something's not working on my end. Give it a moment and try again." },
                 ]);
                 setBearState("idle");
                 return;
@@ -242,7 +242,7 @@ export default function BearPage() {
         } catch {
             setEntries((prev) => [
                 ...prev,
-                { id: uid(), type: "bear", content: "Something went wrong. Zulu will be back shortly." },
+                { id: uid(), type: "bear", content: "I hit a wall there. Try sending that again — I'm not going anywhere." },
             ]);
             setBearState("idle");
         } finally {

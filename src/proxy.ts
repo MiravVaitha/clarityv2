@@ -126,7 +126,7 @@ export async function proxy(request: NextRequest) {
       const retryAfter = Math.ceil(resetMs / 1000)
       return NextResponse.json(
         {
-          error: 'Too many requests. Please slow down and try again shortly.',
+          error: 'You\'re moving faster than I can keep up. Take a breath and try again in a moment.',
           retryAfterSeconds: retryAfter,
         },
         {

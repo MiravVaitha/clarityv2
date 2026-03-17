@@ -112,7 +112,7 @@ export async function POST(req: Request) {
         } catch (parseError: any) {
             console.error("[ERROR] Failed to parse request body:", parseError.message);
             return NextResponse.json(
-                { errorType: "INVALID_INPUT", message: "Invalid JSON in request body" },
+                { errorType: "INVALID_INPUT", message: "That didn't come through right. Try again." },
                 { status: 400 }
             );
         }
@@ -124,7 +124,7 @@ export async function POST(req: Request) {
             const parseResult = ClarifyRefineInputSchema.safeParse(body);
             if (!parseResult.success) {
                 return NextResponse.json(
-                    { errorType: "INVALID_INPUT", message: "Invalid refine input", details: parseResult.error.issues },
+                    { errorType: "INVALID_INPUT", message: "Something was off with that input. Give it another shot." },
                     { status: 400 }
                 );
             }
@@ -161,12 +161,12 @@ export async function POST(req: Request) {
             const modeError = parseResult.error.issues.find((e: any) => e.path[0] === "mode");
             if (modeError) {
                 return NextResponse.json(
-                    { errorType: "INVALID_INPUT", message: "Invalid mode. Expected one of: decision, plan, overwhelm, message_prep." },
+                    { errorType: "INVALID_INPUT", message: "I don't recognise that mode. Pick from decision, plan, overwhelm, or message prep." },
                     { status: 400 }
                 );
             }
             return NextResponse.json(
-                { errorType: "INVALID_INPUT", message: "Invalid input variables", details: parseResult.error.issues },
+                { errorType: "INVALID_INPUT", message: "Something's missing. Check your input and try again." },
                 { status: 400 }
             );
         }
@@ -195,14 +195,14 @@ export async function POST(req: Request) {
             const retryAfter = extractRetryDelay(error);
             return NextResponse.json({
                 errorType: "RATE_LIMIT",
-                message: "You've hit the Gemini free-tier rate limit/quota.",
+                message: "I need a breather — too many requests at once. Try again in a moment.",
                 retryAfterSeconds: retryAfter
             }, { status: 429 });
         }
 
         const errorResponse: any = {
             errorType: error.errorType || "AI_ERROR",
-            message: error.message || "AI request failed."
+            message: error.message || "Something's stuck on my end. Give me a second and try again."
         };
 
         if (DEBUG_AI) {

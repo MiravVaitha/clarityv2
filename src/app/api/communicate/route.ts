@@ -54,7 +54,7 @@ export async function POST(req: Request) {
         } catch (parseError: any) {
             console.error("[ERROR] Failed to parse request body:", parseError.message);
             return NextResponse.json(
-                { errorType: "INVALID_INPUT", message: "Invalid JSON in request body" },
+                { errorType: "INVALID_INPUT", message: "That came through garbled. Send it again?" },
                 { status: 400 }
             );
         }
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
             const parseResult = CommunicateRefineInputSchema.safeParse(body);
             if (!parseResult.success) {
                 return NextResponse.json(
-                    { errorType: "INVALID_INPUT", message: "Invalid refine input", details: parseResult.error.issues },
+                    { errorType: "INVALID_INPUT", message: "Something was off with that refinement. Try again?" },
                     { status: 400 }
                 );
             }
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
         const parseResult = CommunicateInputSchema.safeParse(body);
         if (!parseResult.success) {
             return NextResponse.json(
-                { errorType: "INVALID_INPUT", message: "Invalid input variables", details: parseResult.error.issues },
+                { errorType: "INVALID_INPUT", message: "I'm missing something. Check your input and try again." },
                 { status: 400 }
             );
         }
@@ -132,14 +132,14 @@ export async function POST(req: Request) {
             const retryAfter = extractRetryDelay(error);
             return NextResponse.json({
                 errorType: "RATE_LIMIT",
-                message: "You've hit the Gemini free-tier rate limit/quota.",
+                message: "Too many requests coming in at once. Give it a moment and try again.",
                 retryAfterSeconds: retryAfter
             }, { status: 429 });
         }
 
         const errorResponse: any = {
             errorType: error.errorType || "AI_ERROR",
-            message: error.message || "AI request failed."
+            message: error.message || "Lost my train of thought. Try that again."
         };
 
         if (DEBUG_AI) {

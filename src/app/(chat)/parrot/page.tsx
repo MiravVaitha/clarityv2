@@ -217,7 +217,7 @@ export default function ParrotPage() {
                 const err = await res.json().catch(() => ({}));
                 setEntries((prev) => [
                     ...prev,
-                    { id: uid(), type: "parrot", content: err.error ?? "Something went wrong. Tango will be back shortly." },
+                    { id: uid(), type: "parrot", content: err.error ?? "Bit of turbulence on my end. Give it another shot." },
                 ]);
                 setParrotState("idle");
                 return;
@@ -245,7 +245,7 @@ export default function ParrotPage() {
         } catch {
             setEntries((prev) => [
                 ...prev,
-                { id: uid(), type: "parrot", content: "Something went wrong. Tango will be back shortly." },
+                { id: uid(), type: "parrot", content: "Words failed me — and that doesn't happen often. Try again?" },
             ]);
             setParrotState("idle");
         } finally {

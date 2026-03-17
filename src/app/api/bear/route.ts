@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return NextResponse.json({ error: 'I need to know who I\'m talking to. Try signing in again.' }, { status: 401 });
         }
 
         // 2. Parse and validate request body
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
         const parsed = BearRequestSchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json(
-                { error: 'Invalid request', details: parsed.error.flatten() },
+                { error: 'I didn\'t quite catch that. Could you try again?' },
                 { status: 400 }
             );
         }
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
             if (sessionError) {
                 console.error('[Bear API] Session creation failed:', sessionError);
-                return NextResponse.json({ error: 'Could not create session' }, { status: 500 });
+                return NextResponse.json({ error: 'Couldn\'t start a new conversation. Give it another go in a moment.' }, { status: 500 });
             }
             activeSessionId = session.id;
         }
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     } catch (error: any) {
         console.error('[Bear API] Unhandled error:', error?.message ?? error);
         return NextResponse.json(
-            { error: 'Something went wrong. Bear will be back shortly.' },
+            { error: 'Something\'s stuck on my end. Give me a second and try that again.' },
             { status: 500 }
         );
     }

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return NextResponse.json({ error: 'Can\'t place your voice — try signing in again.' }, { status: 401 });
         }
 
         // 2. Parse and validate request body
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
         const parsed = ParrotRequestSchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json(
-                { error: 'Invalid request', details: parsed.error.flatten() },
+                { error: 'That came through garbled. Send it again?' },
                 { status: 400 }
             );
         }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
             if (sessionError) {
                 console.error('[Parrot API] Session creation failed:', sessionError);
-                return NextResponse.json({ error: 'Could not create session' }, { status: 500 });
+                return NextResponse.json({ error: 'Couldn\'t open a fresh conversation. Try again in a moment.' }, { status: 500 });
             }
             activeSessionId = session.id;
         }
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     } catch (error: any) {
         console.error('[Parrot API] Unhandled error:', error?.message ?? error);
         return NextResponse.json(
-            { error: 'Something went wrong. Parrot will be back shortly.' },
+            { error: 'Lost my voice for a moment there. Try that again.' },
             { status: 500 }
         );
     }
