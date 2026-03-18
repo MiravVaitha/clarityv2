@@ -25,11 +25,34 @@ export default function Home() {
         router.push("/login");
     };
 
+    const activateSide = (side: HoverSide) => {
+        setBearState(side === "bear" ? "talking" : "idle");
+        setParrotState(side === "parrot" ? "talking" : "idle");
+        setHovered(side);
+    };
+
+    const clearSides = () => {
+        setBearState("idle");
+        setParrotState("idle");
+        setHovered(null);
+    };
+
+    const handleSideClick = (side: "bear" | "parrot") => {
+        if (typeof window !== "undefined" && window.matchMedia("(hover: none)").matches) {
+            if (hovered === side) {
+                clearSides();
+            } else {
+                activateSide(side);
+            }
+        }
+    };
+
     return (
         // Fixed full-screen — the (app) Navbar (z-50, sticky) floats transparently on top
         <div
             className="fixed inset-0 flex flex-col md:flex-row overflow-hidden"
             style={{ zIndex: 0 }}
+            onMouseLeave={clearSides}
         >
             {/* ════════════════════════════════════════
                 BEAR HALF — left on desktop, top on mobile
@@ -42,8 +65,8 @@ export default function Home() {
                     transition: "filter 0.5s ease",
                     filter: hovered === "parrot" ? "brightness(0.5)" : "brightness(1)",
                 }}
-                onMouseEnter={() => { setBearState("talking"); setHovered("bear"); }}
-                onMouseLeave={() => { setBearState("idle"); setHovered(null); }}
+                onMouseEnter={() => activateSide("bear")}
+                onClick={() => handleSideClick("bear")}
             >
                 {/* Amber canopy glow */}
                 <div style={{
@@ -76,7 +99,7 @@ export default function Home() {
                     pointerEvents: "none",
                 }} />
 
-                {/* Bear */}
+                {/* Bear + tap-me bubble */}
                 <div style={{
                     position: "absolute",
                     bottom: "18%",
@@ -86,6 +109,39 @@ export default function Home() {
                         : "translateX(-50%)",
                     transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
                 }}>
+                    {/* "Tap me" — mobile only, hidden when active */}
+                    {hovered !== "bear" && (
+                        <div className="md:hidden" style={{
+                            position: "absolute",
+                            bottom: "100%",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            marginBottom: "10px",
+                            padding: "4px 12px",
+                            borderRadius: "10px",
+                            background: "rgba(10, 22, 12, 0.85)",
+                            border: "1px solid rgba(251,191,36,0.2)",
+                            color: "rgba(251,191,36,0.7)",
+                            fontSize: "0.65rem",
+                            fontWeight: 600,
+                            letterSpacing: "0.05em",
+                            whiteSpace: "nowrap",
+                            animation: "tap-bounce 2s ease-in-out infinite",
+                            zIndex: 5,
+                        }}>
+                            Tap me
+                            <div style={{
+                                position: "absolute",
+                                bottom: "-6px",
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                width: 0, height: 0,
+                                borderLeft: "5px solid transparent",
+                                borderRight: "5px solid transparent",
+                                borderTop: "6px solid rgba(10, 22, 12, 0.85)",
+                            }} />
+                        </div>
+                    )}
                     <BearCharacter state={bearState} size={200} />
                 </div>
 
@@ -129,8 +185,8 @@ export default function Home() {
                     transition: "filter 0.5s ease",
                     filter: hovered === "bear" ? "brightness(0.5)" : "brightness(1)",
                 }}
-                onMouseEnter={() => { setParrotState("talking"); setHovered("parrot"); }}
-                onMouseLeave={() => { setParrotState("idle"); setHovered(null); }}
+                onMouseEnter={() => activateSide("parrot")}
+                onClick={() => handleSideClick("parrot")}
             >
                 {/* Emerald canopy glow */}
                 <div style={{
@@ -163,7 +219,7 @@ export default function Home() {
                     pointerEvents: "none",
                 }} />
 
-                {/* Parrot */}
+                {/* Parrot + tap-me bubble */}
                 <div style={{
                     position: "absolute",
                     bottom: "15%",
@@ -173,6 +229,40 @@ export default function Home() {
                         : "translateX(-50%)",
                     transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
                 }}>
+                    {/* "Tap me" — mobile only, hidden when active */}
+                    {hovered !== "parrot" && (
+                        <div className="md:hidden" style={{
+                            position: "absolute",
+                            bottom: "100%",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            marginBottom: "10px",
+                            padding: "4px 12px",
+                            borderRadius: "10px",
+                            background: "rgba(8, 20, 12, 0.85)",
+                            border: "1px solid rgba(52,211,153,0.2)",
+                            color: "rgba(52,211,153,0.7)",
+                            fontSize: "0.65rem",
+                            fontWeight: 600,
+                            letterSpacing: "0.05em",
+                            whiteSpace: "nowrap",
+                            animation: "tap-bounce 2s ease-in-out infinite",
+                            animationDelay: "1s",
+                            zIndex: 5,
+                        }}>
+                            Tap me
+                            <div style={{
+                                position: "absolute",
+                                bottom: "-6px",
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                width: 0, height: 0,
+                                borderLeft: "5px solid transparent",
+                                borderRight: "5px solid transparent",
+                                borderTop: "6px solid rgba(8, 20, 12, 0.85)",
+                            }} />
+                        </div>
+                    )}
                     <ParrotCharacter state={parrotState} size={200} />
                 </div>
 
@@ -227,6 +317,80 @@ export default function Home() {
             />
 
             {/* ════════════════════════════════════════
+                SPEECH BUBBLES — outside half-divs to avoid overflow clip
+            ════════════════════════════════════════ */}
+            {hovered === "bear" && (
+                <div
+                    className="absolute md:left-1/4 left-1/2 -translate-x-1/2 md:top-[30%] top-[6%]"
+                    style={{
+                        zIndex: 15,
+                        width: "250px",
+                        maxWidth: "calc(100vw - 48px)",
+                        padding: "16px 18px",
+                        borderRadius: "16px",
+                        background: "rgba(8, 20, 10, 0.92)",
+                        backdropFilter: "blur(16px)",
+                        WebkitBackdropFilter: "blur(16px)",
+                        border: "1px solid rgba(251,191,36,0.25)",
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(251,191,36,0.08)",
+                        color: "rgba(245, 232, 205, 0.88)",
+                        fontSize: "0.8rem",
+                        lineHeight: 1.55,
+                        textAlign: "center",
+                        animation: "speech-bubble-in 0.3s ease-out",
+                        pointerEvents: "none",
+                    }}
+                >
+                    {"Hey \u2014 I\u2019m Zulu. Tell me what\u2019s on your mind. A decision you\u2019re weighing, something you\u2019re trying to plan, or just something that feels tangled. I\u2019ll help you see it clearly."}
+                    <div style={{
+                        position: "absolute",
+                        bottom: "-8px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 0, height: 0,
+                        borderLeft: "8px solid transparent",
+                        borderRight: "8px solid transparent",
+                        borderTop: "8px solid rgba(8, 20, 10, 0.92)",
+                    }} />
+                </div>
+            )}
+            {hovered === "parrot" && (
+                <div
+                    className="absolute md:left-3/4 left-1/2 -translate-x-1/2 md:top-[30%] top-[56%]"
+                    style={{
+                        zIndex: 15,
+                        width: "250px",
+                        maxWidth: "calc(100vw - 48px)",
+                        padding: "16px 18px",
+                        borderRadius: "16px",
+                        background: "rgba(6, 18, 10, 0.92)",
+                        backdropFilter: "blur(16px)",
+                        WebkitBackdropFilter: "blur(16px)",
+                        border: "1px solid rgba(52,211,153,0.25)",
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(52,211,153,0.08)",
+                        color: "rgba(210, 240, 225, 0.88)",
+                        fontSize: "0.8rem",
+                        lineHeight: 1.55,
+                        textAlign: "center",
+                        animation: "speech-bubble-in 0.3s ease-out",
+                        pointerEvents: "none",
+                    }}
+                >
+                    {"Hey \u2014 I\u2019m Tango. What do you need to say, and who\u2019s it going to? Give me the situation and I\u2019ll ask a couple of quick questions. Then I\u2019ll put together a few options for you."}
+                    <div style={{
+                        position: "absolute",
+                        bottom: "-8px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 0, height: 0,
+                        borderLeft: "8px solid transparent",
+                        borderRight: "8px solid transparent",
+                        borderTop: "8px solid rgba(6, 18, 10, 0.92)",
+                    }} />
+                </div>
+            )}
+
+            {/* ════════════════════════════════════════
                 CENTER OVERLAY — floats above both halves
             ════════════════════════════════════════ */}
             <div
@@ -268,20 +432,30 @@ export default function Home() {
                                 display: "block",
                                 padding: "11px 18px",
                                 borderRadius: "11px",
-                                background: "rgba(251,191,36,0.88)",
+                                background: hovered === "bear"
+                                    ? "rgba(251,191,36,1)"
+                                    : "rgba(251,191,36,0.88)",
                                 color: "#160c04",
                                 fontWeight: 700,
                                 fontSize: "0.875rem",
                                 textDecoration: "none",
                                 letterSpacing: "0.02em",
-                                transition: "background 0.18s",
+                                transition: "all 0.3s ease",
+                                boxShadow: hovered === "bear"
+                                    ? "0 0 18px rgba(251,191,36,0.45), 0 0 36px rgba(251,191,36,0.18)"
+                                    : "none",
+                                transform: hovered === "bear" ? "scale(1.04)" : "scale(1)",
                             }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(251,191,36,1)")}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(251,191,36,0.88)")}
+                            onMouseEnter={(e) => {
+                                if (hovered !== "bear") e.currentTarget.style.background = "rgba(251,191,36,1)";
+                            }}
+                            onMouseLeave={(e) => {
+                                if (hovered !== "bear") e.currentTarget.style.background = "rgba(251,191,36,0.88)";
+                            }}
                         >
                             {/* Desktop: Bear is left → ←   Mobile: Bear is top → ↑ */}
-                            <span className="hidden md:inline">← </span>
-                            <span className="md:hidden">↑ </span>
+                            <span className="hidden md:inline">{"\u2190"} </span>
+                            <span className="md:hidden">{"\u2191"} </span>
                             Talk to Zulu
                         </Link>
                         <Link
@@ -290,21 +464,31 @@ export default function Home() {
                                 display: "block",
                                 padding: "11px 18px",
                                 borderRadius: "11px",
-                                background: "rgba(52,211,153,0.88)",
+                                background: hovered === "parrot"
+                                    ? "rgba(52,211,153,1)"
+                                    : "rgba(52,211,153,0.88)",
                                 color: "#021a0a",
                                 fontWeight: 700,
                                 fontSize: "0.875rem",
                                 textDecoration: "none",
                                 letterSpacing: "0.02em",
-                                transition: "background 0.18s",
+                                transition: "all 0.3s ease",
+                                boxShadow: hovered === "parrot"
+                                    ? "0 0 18px rgba(52,211,153,0.45), 0 0 36px rgba(52,211,153,0.18)"
+                                    : "none",
+                                transform: hovered === "parrot" ? "scale(1.04)" : "scale(1)",
                             }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(52,211,153,1)")}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(52,211,153,0.88)")}
+                            onMouseEnter={(e) => {
+                                if (hovered !== "parrot") e.currentTarget.style.background = "rgba(52,211,153,1)";
+                            }}
+                            onMouseLeave={(e) => {
+                                if (hovered !== "parrot") e.currentTarget.style.background = "rgba(52,211,153,0.88)";
+                            }}
                         >
                             {/* Desktop: Parrot is right → →   Mobile: Parrot is bottom → ↓ */}
                             Talk to Tango
-                            <span className="hidden md:inline"> →</span>
-                            <span className="md:hidden"> ↓</span>
+                            <span className="hidden md:inline"> {"\u2192"}</span>
+                            <span className="md:hidden"> {"\u2193"}</span>
                         </Link>
                     </div>
 
