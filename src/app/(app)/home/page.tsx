@@ -70,7 +70,7 @@ export default function Home() {
                     transition: "filter 0.5s ease",
                     filter: hovered === "parrot" ? "brightness(0.5)" : "none",
                 }}
-                onMouseEnter={() => activateSide("bear")}
+                onMouseEnter={() => { if (!isTouchDevice) activateSide("bear"); }}
                 onClick={() => handleSideClick("bear")}
             >
                 {/* Amber canopy glow */}
@@ -104,7 +104,7 @@ export default function Home() {
                     pointerEvents: "none",
                 }} />
 
-                {/* Bear + tap-me bubble */}
+                {/* Bear character */}
                 <div style={{
                     position: "absolute",
                     bottom: "18%",
@@ -114,39 +114,6 @@ export default function Home() {
                         : "translateX(-50%)",
                     transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
                 }}>
-                    {/* "Tap me" — mobile only, hidden when any side is active */}
-                    {hovered === null && (
-                        <div className="md:hidden" style={{
-                            position: "absolute",
-                            bottom: "100%",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            marginBottom: "10px",
-                            padding: "4px 12px",
-                            borderRadius: "10px",
-                            background: "rgba(10, 22, 12, 0.85)",
-                            border: "1px solid rgba(251,191,36,0.2)",
-                            color: "rgba(251,191,36,0.7)",
-                            fontSize: "0.65rem",
-                            fontWeight: 600,
-                            letterSpacing: "0.05em",
-                            whiteSpace: "nowrap",
-                            animation: "tap-bounce 2s ease-in-out infinite",
-                            zIndex: 21,
-                        }}>
-                            Tap me
-                            <div style={{
-                                position: "absolute",
-                                bottom: "-6px",
-                                left: "50%",
-                                transform: "translateX(-50%)",
-                                width: 0, height: 0,
-                                borderLeft: "5px solid transparent",
-                                borderRight: "5px solid transparent",
-                                borderTop: "6px solid rgba(10, 22, 12, 0.85)",
-                            }} />
-                        </div>
-                    )}
                     <BearCharacter state={bearState} size={200} />
                 </div>
 
@@ -190,7 +157,7 @@ export default function Home() {
                     transition: "filter 0.5s ease",
                     filter: hovered === "bear" ? "brightness(0.5)" : "none",
                 }}
-                onMouseEnter={() => activateSide("parrot")}
+                onMouseEnter={() => { if (!isTouchDevice) activateSide("parrot"); }}
                 onClick={() => handleSideClick("parrot")}
             >
                 {/* Emerald canopy glow */}
@@ -224,7 +191,7 @@ export default function Home() {
                     pointerEvents: "none",
                 }} />
 
-                {/* Parrot + tap-me bubble */}
+                {/* Parrot character */}
                 <div style={{
                     position: "absolute",
                     bottom: "15%",
@@ -234,40 +201,6 @@ export default function Home() {
                         : "translateX(-50%)",
                     transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
                 }}>
-                    {/* "Tap me" — mobile only, hidden when any side is active */}
-                    {hovered === null && (
-                        <div className="md:hidden" style={{
-                            position: "absolute",
-                            bottom: "100%",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            marginBottom: "10px",
-                            padding: "4px 12px",
-                            borderRadius: "10px",
-                            background: "rgba(8, 20, 12, 0.85)",
-                            border: "1px solid rgba(52,211,153,0.2)",
-                            color: "rgba(52,211,153,0.7)",
-                            fontSize: "0.65rem",
-                            fontWeight: 600,
-                            letterSpacing: "0.05em",
-                            whiteSpace: "nowrap",
-                            animation: "tap-bounce 2s ease-in-out infinite",
-                            animationDelay: "1s",
-                            zIndex: 21,
-                        }}>
-                            Tap me
-                            <div style={{
-                                position: "absolute",
-                                bottom: "-6px",
-                                left: "50%",
-                                transform: "translateX(-50%)",
-                                width: 0, height: 0,
-                                borderLeft: "5px solid transparent",
-                                borderRight: "5px solid transparent",
-                                borderTop: "6px solid rgba(8, 20, 12, 0.85)",
-                            }} />
-                        </div>
-                    )}
                     <ParrotCharacter state={parrotState} size={200} />
                 </div>
 
@@ -393,6 +326,81 @@ export default function Home() {
                         borderTop: "8px solid rgba(6, 18, 10, 0.92)",
                     }} />
                 </div>
+            )}
+
+            {/* ════════════════════════════════════════
+                TAP-ME PILLS — mobile only, outside halves to escape stacking contexts
+            ════════════════════════════════════════ */}
+            {hovered === null && (
+                <>
+                    {/* Bear tap-me: bear is at bottom 18% of top half (50vh) */}
+                    <div
+                        className="md:hidden"
+                        style={{
+                            position: "absolute",
+                            top: "calc(41% - 230px)",
+                            left: "50%",
+                            zIndex: 25,
+                            padding: "4px 12px",
+                            borderRadius: "10px",
+                            background: "rgba(10, 22, 12, 0.85)",
+                            border: "1px solid rgba(251,191,36,0.2)",
+                            color: "rgba(251,191,36,0.7)",
+                            fontSize: "0.65rem",
+                            fontWeight: 600,
+                            letterSpacing: "0.05em",
+                            whiteSpace: "nowrap",
+                            animation: "tap-bounce 2s ease-in-out infinite",
+                            pointerEvents: "none",
+                        }}
+                    >
+                        Tap me
+                        <div style={{
+                            position: "absolute",
+                            bottom: "-6px",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            width: 0, height: 0,
+                            borderLeft: "5px solid transparent",
+                            borderRight: "5px solid transparent",
+                            borderTop: "6px solid rgba(10, 22, 12, 0.85)",
+                        }} />
+                    </div>
+                    {/* Parrot tap-me: parrot is at bottom 15% of bottom half (50vh) */}
+                    <div
+                        className="md:hidden"
+                        style={{
+                            position: "absolute",
+                            top: "calc(92.5% - 230px)",
+                            left: "50%",
+                            zIndex: 25,
+                            padding: "4px 12px",
+                            borderRadius: "10px",
+                            background: "rgba(8, 20, 12, 0.85)",
+                            border: "1px solid rgba(52,211,153,0.2)",
+                            color: "rgba(52,211,153,0.7)",
+                            fontSize: "0.65rem",
+                            fontWeight: 600,
+                            letterSpacing: "0.05em",
+                            whiteSpace: "nowrap",
+                            animation: "tap-bounce 2s ease-in-out infinite",
+                            animationDelay: "1s",
+                            pointerEvents: "none",
+                        }}
+                    >
+                        Tap me
+                        <div style={{
+                            position: "absolute",
+                            bottom: "-6px",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            width: 0, height: 0,
+                            borderLeft: "5px solid transparent",
+                            borderRight: "5px solid transparent",
+                            borderTop: "6px solid rgba(8, 20, 12, 0.85)",
+                        }} />
+                    </div>
+                </>
             )}
 
             {/* ════════════════════════════════════════
