@@ -60,8 +60,6 @@ interface RateLimitConfig {
 const RATE_LIMITS: Record<string, RateLimitConfig> = {
   '/api/bear':           { maxRequests: 30, windowMs: 60_000 },
   '/api/parrot':         { maxRequests: 30, windowMs: 60_000 },
-  '/api/clarify':        { maxRequests: 20, windowMs: 60_000 },
-  '/api/communicate':    { maxRequests: 20, windowMs: 60_000 },
   '/api/delete-account': { maxRequests: 3,  windowMs: 60_000 },
 }
 
