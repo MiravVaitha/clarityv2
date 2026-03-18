@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import BearCharacter from "@/components/bear/BearCharacter";
@@ -17,6 +17,11 @@ export default function Home() {
     const [parrotState, setParrotState] = useState<"idle" | "talking">("idle");
     const [hovered, setHovered] = useState<HoverSide>(null);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+    useEffect(() => {
+        setIsTouchDevice(window.matchMedia("(hover: none)").matches);
+    }, []);
 
     const confirmLogout = async () => {
         setIsLogoutModalOpen(false);
@@ -38,7 +43,7 @@ export default function Home() {
     };
 
     const handleSideClick = (side: "bear" | "parrot") => {
-        if (typeof window !== "undefined" && window.matchMedia("(hover: none)").matches) {
+        if (isTouchDevice) {
             if (hovered === side) {
                 clearSides();
             } else {
@@ -52,7 +57,7 @@ export default function Home() {
         <div
             className="fixed inset-0 flex flex-col md:flex-row overflow-hidden"
             style={{ zIndex: 0 }}
-            onMouseLeave={clearSides}
+            onMouseLeave={() => { if (!isTouchDevice) clearSides(); }}
         >
             {/* ════════════════════════════════════════
                 BEAR HALF — left on desktop, top on mobile
@@ -63,7 +68,7 @@ export default function Home() {
                     minHeight: "50%",
                     background: "linear-gradient(to bottom, #020905 0%, #041a08 40%, #06220c 70%, #041408 100%)",
                     transition: "filter 0.5s ease",
-                    filter: hovered === "parrot" ? "brightness(0.5)" : "brightness(1)",
+                    filter: hovered === "parrot" ? "brightness(0.5)" : "none",
                 }}
                 onMouseEnter={() => activateSide("bear")}
                 onClick={() => handleSideClick("bear")}
@@ -109,8 +114,8 @@ export default function Home() {
                         : "translateX(-50%)",
                     transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
                 }}>
-                    {/* "Tap me" — mobile only, hidden when active */}
-                    {hovered !== "bear" && (
+                    {/* "Tap me" — mobile only, hidden when any side is active */}
+                    {hovered === null && (
                         <div className="md:hidden" style={{
                             position: "absolute",
                             bottom: "100%",
@@ -127,7 +132,7 @@ export default function Home() {
                             letterSpacing: "0.05em",
                             whiteSpace: "nowrap",
                             animation: "tap-bounce 2s ease-in-out infinite",
-                            zIndex: 5,
+                            zIndex: 21,
                         }}>
                             Tap me
                             <div style={{
@@ -183,7 +188,7 @@ export default function Home() {
                     minHeight: "50%",
                     background: "linear-gradient(to bottom, #010c03 0%, #031206 40%, #041808 70%, #020c04 100%)",
                     transition: "filter 0.5s ease",
-                    filter: hovered === "bear" ? "brightness(0.5)" : "brightness(1)",
+                    filter: hovered === "bear" ? "brightness(0.5)" : "none",
                 }}
                 onMouseEnter={() => activateSide("parrot")}
                 onClick={() => handleSideClick("parrot")}
@@ -229,8 +234,8 @@ export default function Home() {
                         : "translateX(-50%)",
                     transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
                 }}>
-                    {/* "Tap me" — mobile only, hidden when active */}
-                    {hovered !== "parrot" && (
+                    {/* "Tap me" — mobile only, hidden when any side is active */}
+                    {hovered === null && (
                         <div className="md:hidden" style={{
                             position: "absolute",
                             bottom: "100%",
@@ -248,7 +253,7 @@ export default function Home() {
                             whiteSpace: "nowrap",
                             animation: "tap-bounce 2s ease-in-out infinite",
                             animationDelay: "1s",
-                            zIndex: 5,
+                            zIndex: 21,
                         }}>
                             Tap me
                             <div style={{
@@ -323,7 +328,7 @@ export default function Home() {
                 <div
                     className="absolute md:left-1/4 left-1/2 -translate-x-1/2 md:top-[30%] top-[6%]"
                     style={{
-                        zIndex: 15,
+                        zIndex: 25,
                         width: "250px",
                         maxWidth: "calc(100vw - 48px)",
                         padding: "16px 18px",
@@ -356,9 +361,9 @@ export default function Home() {
             )}
             {hovered === "parrot" && (
                 <div
-                    className="absolute md:left-3/4 left-1/2 -translate-x-1/2 md:top-[30%] top-[56%]"
+                    className="absolute md:left-3/4 left-1/2 -translate-x-1/2 md:top-[30%] top-[76%]"
                     style={{
-                        zIndex: 15,
+                        zIndex: 25,
                         width: "250px",
                         maxWidth: "calc(100vw - 48px)",
                         padding: "16px 18px",
