@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div className={`${geistSans.variable} h-screen overflow-hidden`}>
+        <div className={`${geistSans.variable} h-[100dvh] overflow-hidden`}>
             <PageTransition style={{ height: "100%" }}>{children}</PageTransition>
         </div>
     );

@@ -276,7 +276,7 @@ export default function BearPage() {
     // ── Render ─────────────────────────────────────────────────────
 
     return (
-        <div className="relative h-screen overflow-hidden flex">
+        <div className="relative h-[100dvh] overflow-hidden flex">
             <WoodsBackground />
 
             {/* ── Background dim overlay — fades in when a card is active ── */}
@@ -571,7 +571,7 @@ export default function BearPage() {
                                 borderRadius: "14px",
                                 padding: "12px 16px",
                                 color: "rgba(220,240,225,0.95)",
-                                fontSize: "0.9375rem",
+                                fontSize: "1rem",
                                 lineHeight: "1.5",
                                 outline: "none",
                                 resize: "none",

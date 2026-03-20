@@ -279,7 +279,7 @@ export default function ParrotPage() {
     // ── Render ─────────────────────────────────────────────────────
 
     return (
-        <div className="relative h-screen overflow-hidden flex">
+        <div className="relative h-[100dvh] overflow-hidden flex">
             <JungleBackground />
 
             {/* ── Background dim overlay — fades in when a draft is active ── */}
@@ -573,7 +573,7 @@ export default function ParrotPage() {
                                 borderRadius: "14px",
                                 padding: "12px 16px",
                                 color: "rgba(215,245,228,0.95)",
-                                fontSize: "0.9375rem",
+                                fontSize: "1rem",
                                 lineHeight: "1.5",
                                 outline: "none",
                                 resize: "none",

@@ -22,7 +22,7 @@ function EyeIcon({ open }: { open: boolean }) {
 const inputStyle = {
     width: "100%", padding: "12px 14px", borderRadius: "11px",
     background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)",
-    color: "rgba(215,240,225,0.9)", fontSize: "0.875rem", outline: "none",
+    color: "rgba(215,240,225,0.9)", fontSize: "1rem", outline: "none",
     fontFamily: "inherit",
 } as const;
 
