@@ -514,30 +514,24 @@ export default function BearPage() {
                                 <div
                                     className="bear-mobile-thinking"
                                     style={{
+                                        flexDirection: "column",
                                         alignItems: "center",
-                                        gap: "8px",
-                                        padding: "6px 4px",
+                                        gap: "6px",
+                                        padding: "12px 4px",
                                         animation: "message-appear 0.3s ease-out both",
                                     }}
                                 >
-                                    <span style={{ color: "rgba(200,225,210,0.45)", fontSize: "0.85rem", fontStyle: "italic" }}>
-                                        Zulu is thinking
-                                    </span>
-                                    <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                                        {[0, 1, 2].map((i) => (
-                                            <div
-                                                key={i}
-                                                style={{
-                                                    width: "5px",
-                                                    height: "5px",
-                                                    borderRadius: "50%",
-                                                    background: "rgba(251,191,36,0.75)",
-                                                    animation: "think-bounce 1.4s ease-in-out infinite",
-                                                    animationDelay: `${i * 0.22}s`,
-                                                }}
-                                            />
-                                        ))}
+                                    <div style={{ opacity: 0.85 }}>
+                                        <BearCharacter state="thinking" size={64} />
                                     </div>
+                                    <span style={{
+                                        color: "rgba(200,225,210,0.45)",
+                                        fontSize: "0.8rem",
+                                        fontStyle: "italic",
+                                        letterSpacing: "0.02em",
+                                    }}>
+                                        Zulu is thinking…
+                                    </span>
                                 </div>
                             )}
 
