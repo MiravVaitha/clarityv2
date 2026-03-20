@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { ParrotDraft, ParrotDraftVersion } from "@/lib/parrotSchemas";
 
 interface InlineDraftCardProps {
@@ -87,6 +87,259 @@ function CopyButton({ text }: { text: string }) {
     );
 }
 
+// ── Vertical scroll hint ─────────────────────────────────────────────
+
+function VScrollHint({
+    children,
+    className,
+    contentStyle,
+}: {
+    children: React.ReactNode;
+    className?: string;
+    contentStyle?: React.CSSProperties;
+}) {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [canScrollUp, setCanScrollUp] = useState(false);
+    const [canScrollDown, setCanScrollDown] = useState(false);
+
+    const check = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        setCanScrollUp(el.scrollTop > 5);
+        setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 5);
+    }, []);
+
+    useEffect(() => {
+        check();
+        const t = setTimeout(check, 50);
+        return () => clearTimeout(t);
+    }, [check]);
+
+    const scrollBy = (delta: number) => {
+        scrollRef.current?.scrollTo({
+            top: scrollRef.current.scrollTop + delta,
+            behavior: "smooth",
+        });
+    };
+
+    return (
+        <div style={{ position: "relative", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+            <style>{`@keyframes scroll-hint-down{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}@keyframes scroll-hint-up{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}@keyframes scroll-hint-right{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}@keyframes scroll-hint-left{0%,100%{transform:translateX(0)}50%{transform:translateX(-3px)}}.scroll-hint-btn:hover{opacity:1!important}`}</style>
+            <div
+                ref={scrollRef}
+                className={className}
+                style={contentStyle}
+                onScroll={check}
+            >
+                {children}
+            </div>
+            {/* Top fade + up arrow */}
+            <div
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "28px",
+                    background: "linear-gradient(to bottom, rgba(5,22,10,0.95), transparent)",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "center",
+                    pointerEvents: "none",
+                    opacity: canScrollUp ? 1 : 0,
+                    transition: "opacity 0.25s",
+                }}
+            >
+                <button
+                    className="scroll-hint-btn"
+                    onClick={() => scrollBy(-80)}
+                    style={{
+                        pointerEvents: canScrollUp ? "auto" : "none",
+                        background: "none",
+                        border: "none",
+                        padding: "6px",
+                        cursor: "pointer",
+                        marginTop: "2px",
+                        opacity: 0.7,
+                        transition: "opacity 0.18s",
+                        animation: canScrollUp ? "scroll-hint-up 2s ease-in-out infinite" : "none",
+                    }}
+                    aria-label="Scroll up"
+                    tabIndex={-1}
+                >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M4 10l4-4 4 4" stroke="rgba(52,211,153,0.7)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+            {/* Bottom fade + down arrow */}
+            <div
+                style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: "28px",
+                    background: "linear-gradient(to top, rgba(5,22,10,0.95), transparent)",
+                    display: "flex",
+                    alignItems: "flex-end",
+                    justifyContent: "center",
+                    pointerEvents: "none",
+                    opacity: canScrollDown ? 1 : 0,
+                    transition: "opacity 0.25s",
+                }}
+            >
+                <button
+                    className="scroll-hint-btn"
+                    onClick={() => scrollBy(80)}
+                    style={{
+                        pointerEvents: canScrollDown ? "auto" : "none",
+                        background: "none",
+                        border: "none",
+                        padding: "6px",
+                        cursor: "pointer",
+                        marginBottom: "2px",
+                        opacity: 0.7,
+                        transition: "opacity 0.18s",
+                        animation: canScrollDown ? "scroll-hint-down 2s ease-in-out infinite" : "none",
+                    }}
+                    aria-label="Scroll down"
+                    tabIndex={-1}
+                >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M4 6l4 4 4-4" stroke="rgba(52,211,153,0.7)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ── Horizontal scroll hint ───────────────────────────────────────────
+
+function HScrollHint({
+    children,
+    className,
+    contentStyle,
+}: {
+    children: React.ReactNode;
+    className?: string;
+    contentStyle?: React.CSSProperties;
+}) {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+
+    const check = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        setCanScrollLeft(el.scrollLeft > 5);
+        setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 5);
+    }, []);
+
+    useEffect(() => {
+        check();
+        const t = setTimeout(check, 50);
+        return () => clearTimeout(t);
+    }, [check]);
+
+    const scrollBy = (delta: number) => {
+        scrollRef.current?.scrollTo({
+            left: scrollRef.current.scrollLeft + delta,
+            behavior: "smooth",
+        });
+    };
+
+    return (
+        <div style={{ position: "relative" }}>
+            <div
+                ref={scrollRef}
+                className={className}
+                style={contentStyle}
+                onScroll={check}
+            >
+                {children}
+            </div>
+            {/* Left fade + arrow */}
+            <div
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    width: "20px",
+                    background: "linear-gradient(to right, rgba(5,22,10,0.95), transparent)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-start",
+                    pointerEvents: "none",
+                    opacity: canScrollLeft ? 1 : 0,
+                    transition: "opacity 0.25s",
+                }}
+            >
+                <button
+                    className="scroll-hint-btn"
+                    onClick={() => scrollBy(-100)}
+                    style={{
+                        pointerEvents: canScrollLeft ? "auto" : "none",
+                        background: "none",
+                        border: "none",
+                        padding: "6px",
+                        cursor: "pointer",
+                        opacity: 0.7,
+                        transition: "opacity 0.18s",
+                        animation: canScrollLeft ? "scroll-hint-left 2s ease-in-out infinite" : "none",
+                    }}
+                    aria-label="Scroll left"
+                    tabIndex={-1}
+                >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M10 4l-4 4 4 4" stroke="rgba(52,211,153,0.7)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+            {/* Right fade + arrow */}
+            <div
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    bottom: 0,
+                    right: 0,
+                    width: "20px",
+                    background: "linear-gradient(to left, rgba(5,22,10,0.95), transparent)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    pointerEvents: "none",
+                    opacity: canScrollRight ? 1 : 0,
+                    transition: "opacity 0.25s",
+                }}
+            >
+                <button
+                    className="scroll-hint-btn"
+                    onClick={() => scrollBy(100)}
+                    style={{
+                        pointerEvents: canScrollRight ? "auto" : "none",
+                        background: "none",
+                        border: "none",
+                        padding: "6px",
+                        cursor: "pointer",
+                        opacity: 0.7,
+                        transition: "opacity 0.18s",
+                        animation: canScrollRight ? "scroll-hint-right 2s ease-in-out infinite" : "none",
+                    }}
+                    aria-label="Scroll right"
+                    tabIndex={-1}
+                >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M6 4l4 4-4 4" stroke="rgba(52,211,153,0.7)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    );
+}
+
 // ── Version content ─────────────────────────────────────────────────
 
 function VersionContent({ version, subject }: { version: ParrotDraftVersion; subject?: string }) {
@@ -126,10 +379,10 @@ function VersionContent({ version, subject }: { version: ParrotDraftVersion; sub
                 </div>
             )}
 
-            {/* Draft body — scrollable */}
-            <div
+            {/* Draft body — scrollable with hint arrows */}
+            <VScrollHint
                 className="no-scrollbar"
-                style={{
+                contentStyle={{
                     flex: 1,
                     overflowY: "auto",
                     fontSize: "0.9rem",
@@ -141,7 +394,7 @@ function VersionContent({ version, subject }: { version: ParrotDraftVersion; sub
                 }}
             >
                 {version.body}
-            </div>
+            </VScrollHint>
         </div>
     );
 }
@@ -246,15 +499,15 @@ export default function InlineDraftCard({ draft, introMessage }: InlineDraftCard
                     </div>
 
                     {/* ── Tab bar ── */}
-                    <div
-                        style={{
+                    <HScrollHint
+                        className="no-scrollbar"
+                        contentStyle={{
                             display: "flex",
                             gap: "4px",
                             padding: "0 20px 0",
                             borderBottom: "1px solid rgba(255,255,255,0.06)",
                             overflowX: "auto",
                         }}
-                        className="no-scrollbar"
                     >
                         {draft.versions.map((version, i) => (
                             <button
@@ -283,7 +536,7 @@ export default function InlineDraftCard({ draft, introMessage }: InlineDraftCard
                                 {version.label}
                             </button>
                         ))}
-                    </div>
+                    </HScrollHint>
 
                     {/* ── Draft body — fixed height ── */}
                     <div

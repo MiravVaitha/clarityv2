@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { ClarifyOutput } from "@/lib/schemas";
 
 interface InlineClarityCardProps {
@@ -189,6 +189,134 @@ function SectionContent({ section }: { section: Section }) {
     return null;
 }
 
+// ── Scroll hint overlay ──────────────────────────────────────────────
+
+function ScrollHint({
+    children,
+    className,
+    contentStyle,
+}: {
+    children: React.ReactNode;
+    className?: string;
+    contentStyle?: React.CSSProperties;
+}) {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [canScrollUp, setCanScrollUp] = useState(false);
+    const [canScrollDown, setCanScrollDown] = useState(false);
+
+    const check = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        setCanScrollUp(el.scrollTop > 5);
+        setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 5);
+    }, []);
+
+    useEffect(() => {
+        check();
+        const t = setTimeout(check, 50);
+        return () => clearTimeout(t);
+    }, [check]);
+
+    const scrollBy = (delta: number) => {
+        scrollRef.current?.scrollTo({
+            top: scrollRef.current.scrollTop + delta,
+            behavior: "smooth",
+        });
+    };
+
+    return (
+        <div style={{ position: "relative", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+            <style>{`@keyframes scroll-hint-down{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}@keyframes scroll-hint-up{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}.scroll-hint-btn:hover{opacity:1!important}`}</style>
+            <div
+                ref={scrollRef}
+                className={className}
+                style={contentStyle}
+                onScroll={check}
+            >
+                {children}
+            </div>
+            {/* Top fade + up arrow */}
+            <div
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "28px",
+                    background: "linear-gradient(to bottom, rgba(10,26,12,0.95), transparent)",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "center",
+                    pointerEvents: "none",
+                    opacity: canScrollUp ? 1 : 0,
+                    transition: "opacity 0.25s",
+                }}
+            >
+                <button
+                    className="scroll-hint-btn"
+                    onClick={() => scrollBy(-80)}
+                    style={{
+                        pointerEvents: canScrollUp ? "auto" : "none",
+                        background: "none",
+                        border: "none",
+                        padding: "6px",
+                        cursor: "pointer",
+                        marginTop: "2px",
+                        opacity: 0.7,
+                        transition: "opacity 0.18s",
+                        animation: canScrollUp ? "scroll-hint-up 2s ease-in-out infinite" : "none",
+                    }}
+                    aria-label="Scroll up"
+                    tabIndex={-1}
+                >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M4 10l4-4 4 4" stroke="rgba(251,191,36,0.7)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+            {/* Bottom fade + down arrow */}
+            <div
+                style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: "28px",
+                    background: "linear-gradient(to top, rgba(10,26,12,0.95), transparent)",
+                    display: "flex",
+                    alignItems: "flex-end",
+                    justifyContent: "center",
+                    pointerEvents: "none",
+                    opacity: canScrollDown ? 1 : 0,
+                    transition: "opacity 0.25s",
+                }}
+            >
+                <button
+                    className="scroll-hint-btn"
+                    onClick={() => scrollBy(80)}
+                    style={{
+                        pointerEvents: canScrollDown ? "auto" : "none",
+                        background: "none",
+                        border: "none",
+                        padding: "6px",
+                        cursor: "pointer",
+                        marginBottom: "2px",
+                        opacity: 0.7,
+                        transition: "opacity 0.18s",
+                        animation: canScrollDown ? "scroll-hint-down 2s ease-in-out infinite" : "none",
+                    }}
+                    aria-label="Scroll down"
+                    tabIndex={-1}
+                >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M4 6l4 4 4-4" stroke="rgba(251,191,36,0.7)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    );
+}
+
 // ── Main component ──────────────────────────────────────────────────
 
 export default function InlineClarityCard({ cardType, card, introMessage }: InlineClarityCardProps) {
@@ -305,18 +433,18 @@ export default function InlineClarityCard({ cardType, card, introMessage }: Inli
                         {section.title}
                     </div>
 
-                    {/* Section content — fixed height, scrolls internally if section is long */}
-                    <div
+                    {/* Section content — scrolls internally with hint arrows */}
+                    <ScrollHint
                         key={slideKey}
                         className="no-scrollbar"
-                        style={{
+                        contentStyle={{
                             flex: 1,
                             overflowY: "auto",
                             animation: "card-slide-in 0.28s ease-out both",
                         }}
                     >
                         <SectionContent section={section} />
-                    </div>
+                    </ScrollHint>
 
                     {/* Navigation */}
                     <div
