@@ -294,7 +294,7 @@ export default function Home() {
             )}
             {hovered === "parrot" && (
                 <div
-                    className="absolute md:left-3/4 left-1/2 -translate-x-1/2 md:top-[30%] top-[76%]"
+                    className="absolute md:left-3/4 left-1/2 -translate-x-1/2 md:top-[30%] top-[78%]"
                     style={{
                         zIndex: 25,
                         width: "250px",
@@ -315,7 +315,18 @@ export default function Home() {
                     }}
                 >
                     {"Hey \u2014 I\u2019m Tango. What do you need to say, and who\u2019s it going to? Give me the situation and I\u2019ll ask a couple of quick questions. Then I\u2019ll put together a few options for you."}
-                    <div style={{
+                    {/* Mobile: arrow at top pointing up toward Tango above; Desktop: arrow at bottom pointing down */}
+                    <div className="md:hidden" style={{
+                        position: "absolute",
+                        top: "-8px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 0, height: 0,
+                        borderLeft: "8px solid transparent",
+                        borderRight: "8px solid transparent",
+                        borderBottom: "8px solid rgba(6, 18, 10, 0.92)",
+                    }} />
+                    <div className="hidden md:block" style={{
                         position: "absolute",
                         bottom: "-8px",
                         left: "50%",
@@ -366,12 +377,12 @@ export default function Home() {
                             borderTop: "6px solid rgba(10, 22, 12, 0.85)",
                         }} />
                     </div>
-                    {/* Parrot tap-me: parrot is at bottom 15% of bottom half (50vh) */}
+                    {/* Parrot tap-me: positioned where speech bubble appears */}
                     <div
                         className="md:hidden"
                         style={{
                             position: "absolute",
-                            top: "calc(92.5% - 230px)",
+                            top: "78%",
                             left: "50%",
                             zIndex: 25,
                             padding: "4px 12px",
