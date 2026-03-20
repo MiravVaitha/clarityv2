@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ClarifyOutput } from "@/lib/schemas";
 
 interface InlineClarityCardProps {
@@ -195,6 +195,15 @@ export default function InlineClarityCard({ cardType, card, introMessage }: Inli
     const sections = buildSections(cardType, card);
     const [current, setCurrent] = useState(0);
     const [slideKey, setSlideKey] = useState(0);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const mq = window.matchMedia("(max-width: 767px)");
+        setIsMobile(mq.matches);
+        const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+        mq.addEventListener("change", handler);
+        return () => mq.removeEventListener("change", handler);
+    }, []);
 
     const goTo = (index: number) => {
         setCurrent(index);
@@ -254,7 +263,8 @@ export default function InlineClarityCard({ cardType, card, introMessage }: Inli
                         boxShadow: "0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(251,191,36,0.07)",
                         backdropFilter: "blur(16px)",
                         padding: "20px 22px 18px",
-                        height: "320px",
+                        minHeight: isMobile ? "150px" : "180px",
+                        maxHeight: isMobile ? "320px" : "420px",
                         display: "flex",
                         flexDirection: "column",
                     }}
