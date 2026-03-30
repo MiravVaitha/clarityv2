@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
+import BearCharacter from "@/components/bear/BearCharacter";
+import ParrotCharacter from "@/components/parrot/ParrotCharacter";
+import { BearForest, ParrotForest } from "@/components/RiveForest";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "signin" | "signup" | "forgot";
@@ -120,29 +124,9 @@ export default function Login() {
             {/* ── BEAR HALF ── */}
             <div className="flex-1 relative overflow-hidden"
                 style={{ background: "linear-gradient(to bottom, #020905 0%, #041a08 45%, #06220c 100%)" }}>
-                <div style={{
-                    position: "absolute", top: "10%", left: "10%", width: "80%", height: "70%",
-                    background: "radial-gradient(ellipse at 50% 40%, rgba(140,85,15,0.2) 0%, transparent 65%)",
-                    pointerEvents: "none",
-                }} />
-                <svg style={{ position: "absolute", bottom: "15%", left: 0, width: "100%", opacity: 0.3 }}
-                    viewBox="0 0 600 280" preserveAspectRatio="xMidYMax meet" fill="none">
-                    <path d="M0 280 L0 190 Q35 90 75 155 Q115 75 155 140 Q195 85 235 148 Q275 70 315 145 Q355 90 395 152 Q435 78 475 148 Q515 88 555 150 L600 150 L600 280 Z" fill="#0a2010"/>
-                </svg>
-                <div style={{
-                    position: "absolute", bottom: 0, left: 0, right: 0, height: "22%",
-                    background: "linear-gradient(to top, rgba(18,55,22,0.4) 0%, transparent 100%)",
-                    pointerEvents: "none",
-                }} />
-                <div style={{ position: "absolute", bottom: "12%", left: "50%", transform: "translateX(-50%)", opacity: 0.2 }}>
-                    <svg width="90" height="95" viewBox="0 0 200 210" fill="none">
-                        <ellipse cx="100" cy="148" rx="54" ry="52" fill="#2a1a0a"/>
-                        <ellipse cx="100" cy="88" rx="48" ry="46" fill="#2a1a0a"/>
-                        <ellipse cx="62" cy="48" rx="18" ry="18" fill="#2a1a0a"/>
-                        <ellipse cx="138" cy="48" rx="18" ry="18" fill="#2a1a0a"/>
-                        <ellipse cx="54" cy="158" rx="16" ry="22" fill="#2a1a0a" transform="rotate(-15 54 158)"/>
-                        <ellipse cx="146" cy="158" rx="16" ry="22" fill="#2a1a0a" transform="rotate(15 146 158)"/>
-                    </svg>
+                <BearForest />
+                <div style={{ position: "absolute", bottom: "12%", left: "50%", transform: "translateX(-50%)", opacity: 0.25 }}>
+                    <BearCharacter size={90} />
                 </div>
                 <div style={{
                     position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
@@ -154,29 +138,9 @@ export default function Login() {
             {/* ── PARROT HALF ── */}
             <div className="flex-1 relative overflow-hidden"
                 style={{ background: "linear-gradient(to bottom, #010c03 0%, #031206 45%, #041808 100%)" }}>
-                <div style={{
-                    position: "absolute", top: "10%", right: "10%", width: "80%", height: "70%",
-                    background: "radial-gradient(ellipse at 50% 40%, rgba(40,130,25,0.22) 0%, transparent 65%)",
-                    pointerEvents: "none",
-                }} />
-                <svg style={{ position: "absolute", bottom: "15%", left: 0, width: "100%", opacity: 0.32 }}
-                    viewBox="0 0 600 260" preserveAspectRatio="xMidYMax meet" fill="none">
-                    <path d="M0 260 L0 178 Q40 82 85 145 Q132 62 178 135 Q225 78 272 140 Q318 66 365 140 Q415 80 462 148 Q510 74 558 145 L600 145 L600 260 Z" fill="#031c0a"/>
-                </svg>
-                <div style={{
-                    position: "absolute", bottom: 0, left: 0, right: 0, height: "20%",
-                    background: "linear-gradient(to top, rgba(18,68,22,0.38) 0%, transparent 100%)",
-                    pointerEvents: "none",
-                }} />
-                <div style={{ position: "absolute", bottom: "12%", left: "50%", transform: "translateX(-50%)", opacity: 0.2 }}>
-                    <svg width="80" height="100" viewBox="0 0 200 250" fill="none">
-                        <ellipse cx="100" cy="140" rx="42" ry="47" fill="#16a34a"/>
-                        <ellipse cx="100" cy="82" rx="33" ry="31" fill="#dc2626"/>
-                        <ellipse cx="62" cy="143" rx="19" ry="28" fill="#15803d" transform="rotate(-10 62 143)"/>
-                        <ellipse cx="138" cy="143" rx="19" ry="28" fill="#15803d" transform="rotate(10 138 143)"/>
-                        <path d="M88 175 Q72 202 68 232" stroke="#166534" strokeWidth="11" strokeLinecap="round" fill="none"/>
-                        <path d="M112 175 Q128 202 132 230" stroke="#166534" strokeWidth="11" strokeLinecap="round" fill="none"/>
-                    </svg>
+                <ParrotForest />
+                <div style={{ position: "absolute", bottom: "12%", left: "50%", transform: "translateX(-50%)", opacity: 0.25 }}>
+                    <ParrotCharacter size={80} />
                 </div>
                 <div style={{
                     position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
@@ -204,16 +168,9 @@ export default function Login() {
                     padding: "36px 32px",
                     boxShadow: "0 24px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)",
                 }}>
-                    <div style={{ textAlign: "center", marginBottom: "6px" }}>
-                        <BrandLogo size="nav" variant="light" centered={true} clickable={false} />
+                    <div style={{ textAlign: "center", marginBottom: "28px" }}>
+                        <BrandLogo size="auth" variant="light" centered={true} clickable={false} />
                     </div>
-                    <p style={{
-                        textAlign: "center", fontSize: "0.7rem",
-                        color: "rgba(165,210,190,0.42)", fontStyle: "italic",
-                        marginBottom: "28px", letterSpacing: "0.04em",
-                    }}>
-                        Turn chaos into clear communication.
-                    </p>
 
                     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
@@ -320,6 +277,26 @@ export default function Login() {
                                 Back to sign in
                             </button>
                         )}
+                    </div>
+
+                    {/* Divider */}
+                    <div style={{
+                        height: "1px",
+                        background: "rgba(255,255,255,0.07)",
+                        margin: "14px 0 12px",
+                    }} />
+
+                    {/* Back to landing */}
+                    <div style={{ textAlign: "center" }}>
+                        <Link href="/" style={{
+                            fontSize: "0.72rem",
+                            color: "rgba(165,210,190,0.35)",
+                            textDecoration: "none",
+                            letterSpacing: "0.03em",
+                            transition: "color 0.18s",
+                        }}>
+                            {"\u2190"} What is ClarityCast?
+                        </Link>
                     </div>
                 </div>
             </div>

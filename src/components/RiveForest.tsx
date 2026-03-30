@@ -3,7 +3,17 @@
 import { useEffect } from "react";
 import { useRive, useStateMachineInput, Layout, Fit, Alignment } from "@rive-app/react-canvas";
 
-export default function JungleBackground() {
+export function BearForest() {
+    const { RiveComponent } = useRive({
+        src: "/rive/mouse-tracking-forest.riv",
+        stateMachines: "State Machine 1",
+        layout: new Layout({ fit: Fit.Cover, alignment: Alignment.Center }),
+        autoplay: true,
+    });
+    return <div style={{ position: "absolute", inset: 0 }}><RiveComponent /></div>;
+}
+
+export function ParrotForest() {
     const { rive, RiveComponent } = useRive({
         src: "/rive/parallax-forest.riv",
         artboard: "forest.svg",
@@ -24,11 +34,5 @@ export default function JungleBackground() {
         return () => window.removeEventListener("mousemove", onMouseMove);
     }, [xAxis, yAxis]);
 
-    return (
-        <div className="fixed inset-0 -z-10 overflow-hidden" style={{
-            background: "linear-gradient(to bottom, #010c03 0%, #021005 22%, #031508 50%, #041206 75%, #020d04 100%)",
-        }}>
-            <RiveComponent />
-        </div>
-    );
+    return <div style={{ position: "absolute", inset: 0 }}><RiveComponent /></div>;
 }

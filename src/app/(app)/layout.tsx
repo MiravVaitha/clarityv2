@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
     title: "ClarityCast",
-    description: "Turn chaos into clear communication",
+    description: "ClarityCast",
 };
 
 export default function AppLayout({

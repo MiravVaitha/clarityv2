@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
     title: "ClarityCast - Login",
-    description: "Turn chaos into clear communication",
+    description: "ClarityCast",
 };
 
 export default function AuthLayout({

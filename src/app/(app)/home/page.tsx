@@ -3,11 +3,52 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import BearCharacter from "@/components/bear/BearCharacter";
+import { useRive, Layout, Fit, Alignment } from "@rive-app/react-canvas";
 import ParrotCharacter from "@/components/parrot/ParrotCharacter";
+import { BearForest, ParrotForest } from "@/components/RiveForest";
 import BrandLogo from "@/components/BrandLogo";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { createClient } from "@/lib/supabase/client";
+
+/* Bear character with full-page eye tracking (no black box) */
+function HomeBear({ size = 200 }: { size?: number }) {
+    const { canvas, RiveComponent } = useRive({
+        src: "/rive/bear.riv",
+        stateMachines: "State Machine 1",
+        layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),
+        autoplay: true,
+    });
+
+    useEffect(() => {
+        if (!canvas) return;
+
+        const onMouseMove = (e: MouseEvent) => {
+            const rect = canvas.getBoundingClientRect();
+            // Map full viewport → canvas area so bear tracks cursor anywhere on the page
+            const mappedClientX = rect.left + (e.clientX / window.innerWidth) * rect.width;
+            const mappedClientY = rect.top + (e.clientY / window.innerHeight) * rect.height;
+
+            canvas.dispatchEvent(new MouseEvent("mousemove", {
+                clientX: mappedClientX,
+                clientY: mappedClientY,
+                bubbles: false,
+            }));
+        };
+
+        window.addEventListener("mousemove", onMouseMove);
+        return () => window.removeEventListener("mousemove", onMouseMove);
+    }, [canvas]);
+
+    return (
+        <div style={{
+            width: size,
+            height: size * 1.05,
+        }}>
+            {/* pointer-events:none prevents natural events; global listener handles all tracking */}
+            <RiveComponent style={{ pointerEvents: "none" }} />
+        </div>
+    );
+}
 
 type HoverSide = "bear" | "parrot" | null;
 
@@ -69,42 +110,15 @@ export default function Home() {
                     background: "linear-gradient(to bottom, #020905 0%, #041a08 40%, #06220c 70%, #041408 100%)",
                     transition: "filter 0.5s ease",
                     filter: hovered === "parrot" ? "brightness(0.5)" : "none",
+                    isolation: "isolate",
                 }}
                 onMouseEnter={() => { if (!isTouchDevice) activateSide("bear"); }}
                 onClick={() => handleSideClick("bear")}
             >
-                {/* Amber canopy glow */}
-                <div style={{
-                    position: "absolute", top: "10%", left: "15%", width: "70%", height: "60%",
-                    background: "radial-gradient(ellipse at 50% 35%, rgba(160,100,20,0.22) 0%, transparent 65%)",
-                    pointerEvents: "none",
-                }} />
+                {/* Rive mouse-tracking forest background */}
+                <BearForest />
 
-                {/* Far trees */}
-                <svg
-                    style={{ position: "absolute", bottom: "28%", left: 0, width: "100%", opacity: 0.28 }}
-                    viewBox="0 0 800 200" preserveAspectRatio="xMidYMax meet" fill="none"
-                >
-                    <path d="M0 200 L0 140 Q40 60 80 120 Q120 60 160 110 Q200 40 240 100 Q280 60 320 120 Q360 50 400 110 Q440 65 480 120 Q520 55 560 115 Q600 50 640 110 Q680 65 720 120 Q760 55 800 115 L800 200 Z" fill="#0d2812"/>
-                </svg>
-
-                {/* Mid trees */}
-                <svg
-                    style={{ position: "absolute", bottom: "18%", left: 0, width: "100%", opacity: 0.5 }}
-                    viewBox="0 0 800 280" preserveAspectRatio="xMidYMax meet" fill="none"
-                >
-                    <path d="M0 280 L0 200 Q30 100 70 160 Q110 80 150 140 Q190 90 230 150 Q270 70 310 140 Q360 100 400 160 Q440 80 480 150 Q520 90 560 155 Q600 75 640 145 Q680 100 720 160 Q760 85 800 150 L800 280 Z" fill="#0a2010"/>
-                </svg>
-
-                {/* Ground mist */}
-                <div style={{
-                    position: "absolute", bottom: 0, left: 0, right: 0, height: "28%",
-                    background: "linear-gradient(to top, rgba(20,60,25,0.4) 0%, transparent 100%)",
-                    animation: "mist-drift 22s ease-in-out infinite",
-                    pointerEvents: "none",
-                }} />
-
-                {/* Bear character */}
+                {/* Bear character — mix-blend-mode:screen here so it blends with the forest backdrop */}
                 <div style={{
                     position: "absolute",
                     bottom: "18%",
@@ -113,14 +127,16 @@ export default function Home() {
                         ? "translateX(-50%) translateY(-8px)"
                         : "translateX(-50%)",
                     transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+                    zIndex: 2,
+                    mixBlendMode: "screen",
                 }}>
-                    <BearCharacter state={bearState} size={200} />
+                    <HomeBear size={200} />
                 </div>
 
                 {/* Bear label */}
                 <div style={{
                     position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
-                    textAlign: "center", whiteSpace: "nowrap",
+                    textAlign: "center", whiteSpace: "nowrap", zIndex: 2,
                 }}>
                     <div style={{
                         fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase",
@@ -131,17 +147,6 @@ export default function Home() {
                     <div style={{ fontSize: "0.78rem", color: "rgba(190,220,200,0.35)", fontStyle: "italic" }}>
                         Clarity &amp; decisions
                     </div>
-                </div>
-
-                {/* Foreground leaf frame */}
-                <div style={{
-                    position: "absolute", bottom: 0, left: 0, width: "80px", height: "50%",
-                    pointerEvents: "none", animation: "leaf-sway 7s ease-in-out infinite",
-                }}>
-                    <svg viewBox="0 0 80 280" fill="none" style={{ width: "100%", height: "100%" }}>
-                        <path d="M0 280 Q8 180 28 130 Q48 90 18 40 Q58 72 66 130 Q74 190 54 280 Z" fill="#061a09" opacity="0.9"/>
-                        <path d="M0 260 Q18 200 8 148 Q2 110 22 72 Q38 104 28 152 Q16 210 12 260 Z" fill="#08200c" opacity="0.55"/>
-                    </svg>
                 </div>
             </div>
 
@@ -160,36 +165,8 @@ export default function Home() {
                 onMouseEnter={() => { if (!isTouchDevice) activateSide("parrot"); }}
                 onClick={() => handleSideClick("parrot")}
             >
-                {/* Emerald canopy glow */}
-                <div style={{
-                    position: "absolute", top: "10%", right: "15%", width: "70%", height: "60%",
-                    background: "radial-gradient(ellipse at 50% 35%, rgba(50,155,30,0.25) 0%, transparent 65%)",
-                    pointerEvents: "none",
-                }} />
-
-                {/* Far canopy */}
-                <svg
-                    style={{ position: "absolute", bottom: "30%", left: 0, width: "100%", opacity: 0.28 }}
-                    viewBox="0 0 800 180" preserveAspectRatio="xMidYMax meet" fill="none"
-                >
-                    <path d="M0 180 L0 110 Q50 40 100 95 Q160 25 220 85 Q280 35 340 90 Q400 25 460 88 Q520 40 580 95 Q640 28 700 90 Q750 45 800 95 L800 180 Z" fill="#031508"/>
-                </svg>
-
-                {/* Mid trees */}
-                <svg
-                    style={{ position: "absolute", bottom: "18%", left: 0, width: "100%", opacity: 0.55 }}
-                    viewBox="0 0 800 260" preserveAspectRatio="xMidYMax meet" fill="none"
-                >
-                    <path d="M0 260 L0 175 Q40 85 90 145 Q140 65 190 135 Q240 80 290 142 Q340 68 390 142 Q450 82 510 148 Q570 76 630 148 Q680 88 730 152 Q770 78 800 145 L800 260 Z" fill="#031c0a"/>
-                </svg>
-
-                {/* Ground mist */}
-                <div style={{
-                    position: "absolute", bottom: 0, left: 0, right: 0, height: "26%",
-                    background: "linear-gradient(to top, rgba(20,80,25,0.35) 0%, transparent 100%)",
-                    animation: "jungle-mist 20s ease-in-out infinite",
-                    pointerEvents: "none",
-                }} />
+                {/* Rive parallax forest background */}
+                <ParrotForest />
 
                 {/* Parrot character */}
                 <div style={{
@@ -200,6 +177,7 @@ export default function Home() {
                         ? "translateX(-50%) translateY(-8px)"
                         : "translateX(-50%)",
                     transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+                    zIndex: 2,
                 }}>
                     <ParrotCharacter state={parrotState} size={200} />
                 </div>
@@ -207,7 +185,7 @@ export default function Home() {
                 {/* Parrot label */}
                 <div style={{
                     position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
-                    textAlign: "center", whiteSpace: "nowrap",
+                    textAlign: "center", whiteSpace: "nowrap", zIndex: 2,
                 }}>
                     <div style={{
                         fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase",
@@ -218,17 +196,6 @@ export default function Home() {
                     <div style={{ fontSize: "0.78rem", color: "rgba(190,220,200,0.35)", fontStyle: "italic" }}>
                         Drafts &amp; messages
                     </div>
-                </div>
-
-                {/* Foreground vine frame */}
-                <div style={{
-                    position: "absolute", bottom: 0, right: 0, width: "80px", height: "50%",
-                    pointerEvents: "none", animation: "vine-sway-alt 10s ease-in-out infinite",
-                }}>
-                    <svg viewBox="0 0 80 280" fill="none" style={{ width: "100%", height: "100%" }}>
-                        <path d="M80 280 Q72 180 52 130 Q32 90 62 40 Q22 72 14 130 Q6 190 26 280 Z" fill="#051a08" opacity="0.9"/>
-                        <path d="M80 260 Q62 200 72 148 Q78 110 58 72 Q42 104 52 152 Q64 210 68 260 Z" fill="#07200b" opacity="0.55"/>
-                    </svg>
                 </div>
             </div>
 
@@ -259,81 +226,115 @@ export default function Home() {
             ════════════════════════════════════════ */}
             {hovered === "bear" && (
                 <div
-                    className="absolute md:left-1/4 left-1/2 -translate-x-1/2 md:top-[30%] top-[6%]"
+                    className="absolute md:left-1/4 left-1/2 -translate-x-1/2 md:top-[26%] top-[4%]"
                     style={{
                         zIndex: 25,
-                        width: "250px",
-                        maxWidth: "calc(100vw - 48px)",
-                        padding: "16px 18px",
+                        width: "260px",
+                        maxWidth: "calc(100vw - 40px)",
+                        padding: "18px 20px",
                         borderRadius: "16px",
                         background: "rgba(8, 20, 10, 0.92)",
                         backdropFilter: "blur(16px)",
                         WebkitBackdropFilter: "blur(16px)",
                         border: "1px solid rgba(251,191,36,0.25)",
                         boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(251,191,36,0.08)",
-                        color: "rgba(245, 232, 205, 0.88)",
-                        fontSize: "0.8rem",
-                        lineHeight: 1.55,
-                        textAlign: "center",
                         animation: "speech-bubble-in 0.3s ease-out",
                         pointerEvents: "none",
                     }}
                 >
-                    {"Hey \u2014 I\u2019m Zulu. Tell me what\u2019s on your mind. A decision you\u2019re weighing, something you\u2019re trying to plan, or just something that feels tangled. I\u2019ll help you see it clearly."}
                     <div style={{
-                        position: "absolute",
-                        bottom: "-8px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
+                        fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em",
+                        textTransform: "uppercase", color: "rgba(251,191,36,0.8)",
+                        marginBottom: "8px",
+                    }}>
+                        Zulu — Your thinking partner
+                    </div>
+                    <div style={{
+                        fontSize: "0.8rem", lineHeight: 1.5, color: "rgba(245,232,205,0.82)",
+                        marginBottom: "12px",
+                    }}>
+                        When your head is full and you need to think something through. Zulu asks the right questions to help you untangle it.
+                    </div>
+                    <div style={{
+                        display: "flex", flexWrap: "wrap", gap: "5px",
+                    }}>
+                        {["Decisions", "Plans", "Overwhelm"].map((tag) => (
+                            <span key={tag} style={{
+                                fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.04em",
+                                padding: "3px 9px", borderRadius: "8px",
+                                background: "rgba(251,191,36,0.1)",
+                                border: "1px solid rgba(251,191,36,0.18)",
+                                color: "rgba(251,191,36,0.7)",
+                            }}>
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                    <div style={{
+                        position: "absolute", bottom: "-8px", left: "50%", transform: "translateX(-50%)",
                         width: 0, height: 0,
-                        borderLeft: "8px solid transparent",
-                        borderRight: "8px solid transparent",
+                        borderLeft: "8px solid transparent", borderRight: "8px solid transparent",
                         borderTop: "8px solid rgba(8, 20, 10, 0.92)",
                     }} />
                 </div>
             )}
             {hovered === "parrot" && (
                 <div
-                    className="absolute md:left-3/4 left-1/2 -translate-x-1/2 md:top-[30%] top-[78%]"
+                    className="absolute md:left-3/4 left-1/2 -translate-x-1/2 md:top-[26%] top-[78%]"
                     style={{
                         zIndex: 25,
-                        width: "250px",
-                        maxWidth: "calc(100vw - 48px)",
-                        padding: "16px 18px",
+                        width: "260px",
+                        maxWidth: "calc(100vw - 40px)",
+                        padding: "18px 20px",
                         borderRadius: "16px",
                         background: "rgba(6, 18, 10, 0.92)",
                         backdropFilter: "blur(16px)",
                         WebkitBackdropFilter: "blur(16px)",
                         border: "1px solid rgba(52,211,153,0.25)",
                         boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(52,211,153,0.08)",
-                        color: "rgba(210, 240, 225, 0.88)",
-                        fontSize: "0.8rem",
-                        lineHeight: 1.55,
-                        textAlign: "center",
                         animation: "speech-bubble-in 0.3s ease-out",
                         pointerEvents: "none",
                     }}
                 >
-                    {"Hey \u2014 I\u2019m Tango. What do you need to say, and who\u2019s it going to? Give me the situation and I\u2019ll ask a couple of quick questions. Then I\u2019ll put together a few options for you."}
-                    {/* Mobile: arrow at top pointing up toward Tango above; Desktop: arrow at bottom pointing down */}
+                    <div style={{
+                        fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em",
+                        textTransform: "uppercase", color: "rgba(52,211,153,0.8)",
+                        marginBottom: "8px",
+                    }}>
+                        Tango — Your writing partner
+                    </div>
+                    <div style={{
+                        fontSize: "0.8rem", lineHeight: 1.5, color: "rgba(210,240,225,0.82)",
+                        marginBottom: "12px",
+                    }}>
+                        When you know what you need to say but not how to say it. Tango learns the situation, then drafts it for you.
+                    </div>
+                    <div style={{
+                        display: "flex", flexWrap: "wrap", gap: "5px",
+                    }}>
+                        {["Messages", "Emails", "Tough conversations"].map((tag) => (
+                            <span key={tag} style={{
+                                fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.04em",
+                                padding: "3px 9px", borderRadius: "8px",
+                                background: "rgba(52,211,153,0.1)",
+                                border: "1px solid rgba(52,211,153,0.18)",
+                                color: "rgba(52,211,153,0.7)",
+                            }}>
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                    {/* Mobile: arrow at top pointing up; Desktop: arrow at bottom */}
                     <div className="md:hidden" style={{
-                        position: "absolute",
-                        top: "-8px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
+                        position: "absolute", top: "-8px", left: "50%", transform: "translateX(-50%)",
                         width: 0, height: 0,
-                        borderLeft: "8px solid transparent",
-                        borderRight: "8px solid transparent",
+                        borderLeft: "8px solid transparent", borderRight: "8px solid transparent",
                         borderBottom: "8px solid rgba(6, 18, 10, 0.92)",
                     }} />
                     <div className="hidden md:block" style={{
-                        position: "absolute",
-                        bottom: "-8px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
+                        position: "absolute", bottom: "-8px", left: "50%", transform: "translateX(-50%)",
                         width: 0, height: 0,
-                        borderLeft: "8px solid transparent",
-                        borderRight: "8px solid transparent",
+                        borderLeft: "8px solid transparent", borderRight: "8px solid transparent",
                         borderTop: "8px solid rgba(6, 18, 10, 0.92)",
                     }} />
                 </div>
@@ -432,21 +433,9 @@ export default function Home() {
                     textAlign: "center",
                 }}>
                     {/* Logo */}
-                    <div style={{ marginBottom: "6px" }}>
-                        <BrandLogo size="nav" variant="light" centered={true} clickable={false} />
+                    <div style={{ marginBottom: "22px" }}>
+                        <BrandLogo size="auth" variant="light" centered={true} clickable={false} />
                     </div>
-
-                    {/* Tagline */}
-                    <p style={{
-                        fontSize: "0.75rem",
-                        color: "rgba(175,215,198,0.48)",
-                        marginBottom: "22px",
-                        fontStyle: "italic",
-                        letterSpacing: "0.01em",
-                        lineHeight: 1.5,
-                    }}>
-                        Unblock your thinking. Craft your words.
-                    </p>
 
                     {/* CTAs */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
