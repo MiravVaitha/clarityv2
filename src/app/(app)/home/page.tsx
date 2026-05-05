@@ -3,58 +3,17 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRive, Layout, Fit, Alignment } from "@rive-app/react-canvas";
+import BearCharacter from "@/components/bear/BearCharacter";
 import ParrotCharacter from "@/components/parrot/ParrotCharacter";
 import { BearForest, ParrotForest } from "@/components/RiveForest";
 import BrandLogo from "@/components/BrandLogo";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { createClient } from "@/lib/supabase/client";
 
-/* Bear character with full-page eye tracking (no black box) */
-function HomeBear({ size = 200 }: { size?: number }) {
-    const { canvas, RiveComponent } = useRive({
-        src: "/rive/bear.riv",
-        stateMachines: "State Machine 1",
-        layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),
-        autoplay: true,
-    });
-
-    useEffect(() => {
-        if (!canvas) return;
-
-        const onMouseMove = (e: MouseEvent) => {
-            const rect = canvas.getBoundingClientRect();
-            // Map full viewport → canvas area so bear tracks cursor anywhere on the page
-            const mappedClientX = rect.left + (e.clientX / window.innerWidth) * rect.width;
-            const mappedClientY = rect.top + (e.clientY / window.innerHeight) * rect.height;
-
-            canvas.dispatchEvent(new MouseEvent("mousemove", {
-                clientX: mappedClientX,
-                clientY: mappedClientY,
-                bubbles: false,
-            }));
-        };
-
-        window.addEventListener("mousemove", onMouseMove);
-        return () => window.removeEventListener("mousemove", onMouseMove);
-    }, [canvas]);
-
-    return (
-        <div style={{
-            width: size,
-            height: size * 1.05,
-        }}>
-            {/* pointer-events:none prevents natural events; global listener handles all tracking */}
-            <RiveComponent style={{ pointerEvents: "none" }} />
-        </div>
-    );
-}
-
 type HoverSide = "bear" | "parrot" | null;
 
 export default function Home() {
     const router = useRouter();
-    const [bearState, setBearState] = useState<"idle" | "talking">("idle");
     const [parrotState, setParrotState] = useState<"idle" | "talking">("idle");
     const [hovered, setHovered] = useState<HoverSide>(null);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -72,13 +31,11 @@ export default function Home() {
     };
 
     const activateSide = (side: HoverSide) => {
-        setBearState(side === "bear" ? "talking" : "idle");
         setParrotState(side === "parrot" ? "talking" : "idle");
         setHovered(side);
     };
 
     const clearSides = () => {
-        setBearState("idle");
         setParrotState("idle");
         setHovered(null);
     };
@@ -116,9 +73,10 @@ export default function Home() {
                 onClick={() => handleSideClick("bear")}
             >
                 {/* Rive mouse-tracking forest background */}
-                <BearForest />
+                <BearForest side="bear" />
 
-                {/* Bear character — mix-blend-mode:screen here so it blends with the forest backdrop */}
+                {/* Bear character — uses shared BearCharacter so the same SVG filter
+                    that strips the artboard's opaque background is applied everywhere. */}
                 <div style={{
                     position: "absolute",
                     bottom: "18%",
@@ -128,25 +86,8 @@ export default function Home() {
                         : "translateX(-50%)",
                     transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
                     zIndex: 2,
-                    mixBlendMode: "screen",
                 }}>
-                    <HomeBear size={200} />
-                </div>
-
-                {/* Bear label */}
-                <div style={{
-                    position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
-                    textAlign: "center", whiteSpace: "nowrap", zIndex: 2,
-                }}>
-                    <div style={{
-                        fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase",
-                        color: "rgba(251,191,36,0.55)", marginBottom: "3px", fontWeight: 700,
-                    }}>
-                        Zulu
-                    </div>
-                    <div style={{ fontSize: "0.78rem", color: "rgba(190,220,200,0.35)", fontStyle: "italic" }}>
-                        Clarity &amp; decisions
-                    </div>
+                    <BearCharacter size={200} trackMouseGlobally dropShadow={false} />
                 </div>
             </div>
 
@@ -166,7 +107,7 @@ export default function Home() {
                 onClick={() => handleSideClick("parrot")}
             >
                 {/* Rive parallax forest background */}
-                <ParrotForest />
+                <ParrotForest side="parrot" />
 
                 {/* Parrot character */}
                 <div style={{
@@ -180,22 +121,6 @@ export default function Home() {
                     zIndex: 2,
                 }}>
                     <ParrotCharacter state={parrotState} size={200} />
-                </div>
-
-                {/* Parrot label */}
-                <div style={{
-                    position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
-                    textAlign: "center", whiteSpace: "nowrap", zIndex: 2,
-                }}>
-                    <div style={{
-                        fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase",
-                        color: "rgba(52,211,153,0.55)", marginBottom: "3px", fontWeight: 700,
-                    }}>
-                        Tango
-                    </div>
-                    <div style={{ fontSize: "0.78rem", color: "rgba(190,220,200,0.35)", fontStyle: "italic" }}>
-                        Drafts &amp; messages
-                    </div>
                 </div>
             </div>
 
@@ -258,7 +183,7 @@ export default function Home() {
                     <div style={{
                         display: "flex", flexWrap: "wrap", gap: "5px",
                     }}>
-                        {["Decisions", "Plans", "Overwhelm"].map((tag) => (
+                        {["Decisions", "Plans", "Overwhelm", "Message prep"].map((tag) => (
                             <span key={tag} style={{
                                 fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.04em",
                                 padding: "3px 9px", borderRadius: "8px",

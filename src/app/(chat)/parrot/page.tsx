@@ -344,21 +344,6 @@ export default function ParrotPage() {
                 >
                     Tango
                 </span>
-
-                {/* Crafting label */}
-                {parrotState === "thinking" && (
-                    <span
-                        style={{
-                            fontSize: "0.8rem",
-                            fontStyle: "italic",
-                            color: "rgba(52,211,153,0.6)",
-                            position: "absolute",
-                            bottom: "28px",
-                        }}
-                    >
-                        Tango is crafting…
-                    </span>
-                )}
             </div>
 
             {/* ── RIGHT PANEL — Chat ── */}

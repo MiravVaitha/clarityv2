@@ -206,6 +206,166 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes scroll-cue-bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.55; }
+  50%      { transform: translateY(4px); opacity: 1; }
+}
+
+/* Fade-up that preserves the translateX(-50%) needed to keep the pill on the divider */
+@keyframes scroll-cue-fade-up {
+  from { opacity: 0; transform: translateX(-50%) translateY(14px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes scroll-cue-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(251,191,36,0), 0 8px 28px rgba(0,0,0,0.45); }
+  50%      { box-shadow: 0 0 22px rgba(251,191,36,0.18), 0 0 22px rgba(52,211,153,0.18), 0 8px 28px rgba(0,0,0,0.5); }
+}
+
+/* ── Drifting ambient blobs in the learn-more section ── */
+.landing-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 0;
+}
+.landing-blob--amber {
+  width: 460px;
+  height: 460px;
+  background: radial-gradient(circle, rgba(251,191,36,0.35) 0%, transparent 70%);
+  top: 10%;
+  left: -8%;
+  animation: blob-drift-a 22s ease-in-out infinite;
+}
+.landing-blob--emerald {
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(52,211,153,0.32) 0%, transparent 70%);
+  bottom: 4%;
+  right: -10%;
+  animation: blob-drift-b 26s ease-in-out infinite;
+}
+@keyframes blob-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(80px, 60px) scale(1.08); }
+  66%      { transform: translate(-40px, 110px) scale(0.95); }
+}
+@keyframes blob-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(-90px, -50px) scale(1.06); }
+  66%      { transform: translate(50px, -110px) scale(0.94); }
+}
+
+/* ── Floating fireflies ── */
+.landing-fireflies {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.landing-firefly {
+  position: absolute;
+  bottom: -10px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  filter: blur(1px);
+  box-shadow: 0 0 8px currentColor;
+  opacity: 0;
+  animation: firefly-rise 14s linear infinite;
+}
+@keyframes firefly-rise {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  10%  { opacity: 0.9; }
+  50%  { transform: translateY(-50vh) translateX(20px); opacity: 0.85; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateY(-100vh) translateX(-20px); opacity: 0; }
+}
+
+/* ── Eyebrow shimmer ── */
+.landing-eyebrow {
+  background: linear-gradient(90deg,
+    rgba(180,210,195,0.55) 0%,
+    rgba(251,191,36,0.95) 35%,
+    rgba(52,211,153,0.95) 65%,
+    rgba(180,210,195,0.55) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: eyebrow-shimmer 6s linear infinite;
+}
+@keyframes eyebrow-shimmer {
+  from { background-position: 0% center; }
+  to   { background-position: 200% center; }
+}
+
+/* ── Character cards ── */
+/* Transparent containers — the character should float without a visible box,
+   matching the home-page treatment. Padding/radius preserved for layout. */
+.landing-character-card {
+  position: relative;
+  padding: 32px 28px 28px;
+  border-radius: 22px;
+  background: transparent;
+  border: none;
+  transition: transform 0.45s cubic-bezier(0.34,1.56,0.64,1);
+}
+.landing-character-card:hover { transform: translateY(-4px); }
+
+.landing-character-card--bear,
+.landing-character-card--parrot {
+  background: transparent;
+  border: none;
+}
+
+/* ── Step cards ── */
+.landing-step-card {
+  position: relative;
+  padding: 28px 22px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  text-align: left;
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s ease, background 0.3s ease;
+  animation: landing-fade-up 0.7s ease-out both;
+  overflow: hidden;
+}
+.landing-step-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg,
+    transparent 0%, transparent 40%,
+    rgba(255,255,255,0.06) 50%, transparent 60%, transparent 100%);
+  background-size: 220% 220%;
+  background-position: 200% center;
+  transition: background-position 0.9s ease;
+  pointer-events: none;
+}
+.landing-step-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(251,191,36,0.35);
+  background: rgba(255,255,255,0.04);
+}
+.landing-step-card:hover::after {
+  background-position: -50% center;
+}
+.landing-step-card__num {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, rgba(251,191,36,0.95) 0%, rgba(52,211,153,0.95) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 /* Hides scrollbar visually while keeping scroll functionality */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -236,11 +396,9 @@
   .bear-mobile-menu-btn { display: flex; }
 }
 
-/* Only visible on mobile — thinking indicator inside chat */
-.bear-mobile-thinking { display: none; }
-@media (max-width: 767px) {
-  .bear-mobile-thinking { display: flex; }
-}
+/* Inline thinking indicator inside chat — shown on all sizes so the
+   user sees loading state while waiting for a response. */
+.bear-mobile-thinking { display: flex; }
 
 /* ── Custom cursor — hide native on pointer devices ── */
 @media (pointer: fine) {
