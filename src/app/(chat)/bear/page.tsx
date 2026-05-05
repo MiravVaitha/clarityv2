@@ -326,8 +326,15 @@ export default function BearPage() {
                     <HamburgerLines />
                 </button>
 
-                {/* Bear character */}
-                <BearCharacter state={bearState} size={240} />
+                {/* Bear character — eyes track cursor anywhere on the page. The Rive
+                    canvas is transparent, so the bear sits cleanly over WoodsBackground
+                    without a visible container box. */}
+                <BearCharacter
+                    state={bearState}
+                    size={240}
+                    trackMouseGlobally
+                    dropShadow={false}
+                />
 
                 {/* Bear name */}
                 <span
@@ -341,21 +348,6 @@ export default function BearPage() {
                 >
                     Zulu
                 </span>
-
-                {/* Thinking label */}
-                {bearState === "thinking" && (
-                    <span
-                        style={{
-                            fontSize: "0.8rem",
-                            fontStyle: "italic",
-                            color: "rgba(251,191,36,0.6)",
-                            position: "absolute",
-                            bottom: "28px",
-                        }}
-                    >
-                        Zulu is thinking…
-                    </span>
-                )}
             </div>
 
             {/* ── RIGHT PANEL — Chat ── */}

@@ -4,8 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
-import BearCharacter from "@/components/bear/BearCharacter";
-import ParrotCharacter from "@/components/parrot/ParrotCharacter";
 import { BearForest, ParrotForest } from "@/components/RiveForest";
 import { createClient } from "@/lib/supabase/client";
 
@@ -124,29 +122,13 @@ export default function Login() {
             {/* ── BEAR HALF ── */}
             <div className="flex-1 relative overflow-hidden"
                 style={{ background: "linear-gradient(to bottom, #020905 0%, #041a08 45%, #06220c 100%)" }}>
-                <BearForest />
-                <div style={{ position: "absolute", bottom: "12%", left: "50%", transform: "translateX(-50%)", opacity: 0.25 }}>
-                    <BearCharacter size={90} />
-                </div>
-                <div style={{
-                    position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
-                    fontSize: "0.55rem", letterSpacing: "0.18em", textTransform: "uppercase",
-                    color: "rgba(251,191,36,0.28)", fontWeight: 700, whiteSpace: "nowrap",
-                }}>Zulu · Clarity</div>
+                <BearForest side="bear" />
             </div>
 
             {/* ── PARROT HALF ── */}
             <div className="flex-1 relative overflow-hidden"
                 style={{ background: "linear-gradient(to bottom, #010c03 0%, #031206 45%, #041808 100%)" }}>
-                <ParrotForest />
-                <div style={{ position: "absolute", bottom: "12%", left: "50%", transform: "translateX(-50%)", opacity: 0.25 }}>
-                    <ParrotCharacter size={80} />
-                </div>
-                <div style={{
-                    position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
-                    fontSize: "0.55rem", letterSpacing: "0.18em", textTransform: "uppercase",
-                    color: "rgba(52,211,153,0.28)", fontWeight: 700, whiteSpace: "nowrap",
-                }}>Tango · Drafts</div>
+                <ParrotForest side="parrot" />
             </div>
 
             {/* ── Divider line ── */}
@@ -289,10 +271,11 @@ export default function Login() {
                     {/* Back to landing */}
                     <div style={{ textAlign: "center" }}>
                         <Link href="/" style={{
-                            fontSize: "0.72rem",
-                            color: "rgba(165,210,190,0.35)",
+                            fontSize: "0.95rem",
+                            fontWeight: 600,
+                            color: "rgba(215,240,225,0.85)",
                             textDecoration: "none",
-                            letterSpacing: "0.03em",
+                            letterSpacing: "0.02em",
                             transition: "color 0.18s",
                         }}>
                             {"\u2190"} What is ClarityCast?
