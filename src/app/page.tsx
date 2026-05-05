@@ -48,7 +48,7 @@ export default function LandingPage() {
                     {/* Zulu — same placement as home page */}
                     <div style={{
                         position: "absolute",
-                        bottom: "18%",
+                        bottom: isMobile ? "20%" : "18%",
                         left: "50%",
                         transform: "translateX(-50%)",
                         zIndex: 2,
@@ -66,7 +66,7 @@ export default function LandingPage() {
                     {/* Tango — same placement as home page */}
                     <div style={{
                         position: "absolute",
-                        bottom: "15%",
+                        bottom: isMobile ? "20%" : "15%",
                         left: "50%",
                         transform: "translateX(-50%)",
                         zIndex: 2,
@@ -87,9 +87,10 @@ export default function LandingPage() {
                 <div style={{
                     position: "absolute", inset: 0,
                     display: "flex", flexDirection: "column",
-                    alignItems: "center", justifyContent: "center",
+                    alignItems: "center",
+                    justifyContent: isMobile ? "flex-start" : "center",
                     zIndex: 10, pointerEvents: "none",
-                    padding: "0 24px",
+                    padding: isMobile ? "9vh 24px 0" : "0 24px",
                 }}>
                     <div style={{
                         animation: "landing-fade-up 0.6s ease-out both",
