@@ -153,4 +153,4 @@ Deployed on **Vercel**. Production builds deploy automatically on every push to 
 
 ## License
 
-Private — all rights reserved.
+MIT License.
