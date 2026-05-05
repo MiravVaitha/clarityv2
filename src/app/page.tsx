@@ -9,11 +9,19 @@ import { BearForest, ParrotForest } from "@/components/RiveForest";
 
 export default function LandingPage() {
     const [scrolled, setScrolled] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 30);
         window.addEventListener("scroll", onScroll, { passive: true });
-        return () => window.removeEventListener("scroll", onScroll);
+        const mq = window.matchMedia("(max-width: 767px)");
+        const updateMobile = () => setIsMobile(mq.matches);
+        updateMobile();
+        mq.addEventListener("change", updateMobile);
+        return () => {
+            window.removeEventListener("scroll", onScroll);
+            mq.removeEventListener("change", updateMobile);
+        };
     }, []);
 
     const scrollToContent = () => {
@@ -27,7 +35,7 @@ export default function LandingPage() {
             ═══════════════════════════════════════ */}
             <section style={{
                 position: "relative",
-                height: "100vh",
+                height: isMobile ? "100dvh" : "100vh",
                 width: "100%",
                 overflow: "hidden",
                 display: "flex",
@@ -86,7 +94,7 @@ export default function LandingPage() {
                     <div style={{
                         animation: "landing-fade-up 0.6s ease-out both",
                         textAlign: "center",
-                        transform: "scale(2.1)",
+                        transform: isMobile ? "scale(1.7)" : "scale(2.1)",
                         transformOrigin: "center",
                     }}>
                         <BrandLogo size="hero" variant="light" centered={true} clickable={false} />
@@ -96,7 +104,7 @@ export default function LandingPage() {
                         href="/login"
                         style={{
                             pointerEvents: "auto",
-                            marginTop: "70px",
+                            marginTop: isMobile ? "36px" : "70px",
                             display: "inline-block",
                             padding: "15px 38px",
                             borderRadius: "14px",
@@ -130,7 +138,7 @@ export default function LandingPage() {
                     aria-label="Scroll to learn more"
                     style={{
                         position: "absolute",
-                        bottom: "36px",
+                        bottom: isMobile ? "72px" : "36px",
                         left: "50%",
                         transform: "translateX(-50%)",
                         zIndex: 12,
@@ -145,7 +153,7 @@ export default function LandingPage() {
                         flexDirection: "column",
                         alignItems: "center",
                         gap: "4px",
-                        padding: "14px 26px 12px",
+                        padding: isMobile ? "9px 18px 7px" : "14px 26px 12px",
                         opacity: scrolled ? 0 : 1,
                         pointerEvents: scrolled ? "none" : "auto",
                         transition: "opacity 0.3s ease, transform 0.2s ease, border-color 0.2s ease, color 0.2s ease",
@@ -164,7 +172,7 @@ export default function LandingPage() {
                     }}
                 >
                     <span style={{
-                        fontSize: "0.95rem",
+                        fontSize: isMobile ? "0.78rem" : "0.95rem",
                         letterSpacing: "0.18em",
                         textTransform: "uppercase",
                         fontWeight: 700,

@@ -18,9 +18,15 @@ export default function Home() {
     const [hovered, setHovered] = useState<HoverSide>(null);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
     const [isTouchDevice, setIsTouchDevice] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
         setIsTouchDevice(window.matchMedia("(hover: none)").matches);
+        const mq = window.matchMedia("(max-width: 767px)");
+        const updateMobile = () => setIsMobile(mq.matches);
+        updateMobile();
+        mq.addEventListener("change", updateMobile);
+        return () => mq.removeEventListener("change", updateMobile);
     }, []);
 
     const confirmLogout = async () => {
@@ -151,12 +157,12 @@ export default function Home() {
             ════════════════════════════════════════ */}
             {hovered === "bear" && (
                 <div
-                    className="absolute md:left-1/4 left-1/2 -translate-x-1/2 md:top-[26%] top-[4%]"
+                    className="absolute md:left-1/4 left-1/2 -translate-x-1/2 md:top-[26%] top-[5%]"
                     style={{
                         zIndex: 25,
-                        width: "260px",
+                        width: isMobile ? "236px" : "260px",
                         maxWidth: "calc(100vw - 40px)",
-                        padding: "18px 20px",
+                        padding: isMobile ? "13px 16px" : "18px 20px",
                         borderRadius: "16px",
                         background: "rgba(8, 20, 10, 0.92)",
                         backdropFilter: "blur(16px)",
@@ -168,15 +174,16 @@ export default function Home() {
                     }}
                 >
                     <div style={{
-                        fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em",
+                        fontSize: isMobile ? "0.62rem" : "0.7rem", fontWeight: 700, letterSpacing: "0.14em",
                         textTransform: "uppercase", color: "rgba(251,191,36,0.8)",
-                        marginBottom: "8px",
+                        marginBottom: isMobile ? "6px" : "8px",
                     }}>
                         Zulu — Your thinking partner
                     </div>
                     <div style={{
-                        fontSize: "0.8rem", lineHeight: 1.5, color: "rgba(245,232,205,0.82)",
-                        marginBottom: "12px",
+                        fontSize: isMobile ? "0.72rem" : "0.8rem",
+                        lineHeight: 1.45, color: "rgba(245,232,205,0.82)",
+                        marginBottom: isMobile ? "9px" : "12px",
                     }}>
                         When your head is full and you need to think something through. Zulu asks the right questions to help you untangle it.
                     </div>
@@ -185,8 +192,8 @@ export default function Home() {
                     }}>
                         {["Decisions", "Plans", "Overwhelm", "Message prep"].map((tag) => (
                             <span key={tag} style={{
-                                fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.04em",
-                                padding: "3px 9px", borderRadius: "8px",
+                                fontSize: isMobile ? "0.6rem" : "0.65rem", fontWeight: 600, letterSpacing: "0.04em",
+                                padding: isMobile ? "2px 7px" : "3px 9px", borderRadius: "8px",
                                 background: "rgba(251,191,36,0.1)",
                                 border: "1px solid rgba(251,191,36,0.18)",
                                 color: "rgba(251,191,36,0.7)",
@@ -205,12 +212,12 @@ export default function Home() {
             )}
             {hovered === "parrot" && (
                 <div
-                    className="absolute md:left-3/4 left-1/2 -translate-x-1/2 md:top-[26%] top-[78%]"
+                    className="absolute md:left-3/4 left-1/2 -translate-x-1/2 md:top-[26%] top-[70%]"
                     style={{
                         zIndex: 25,
-                        width: "260px",
+                        width: isMobile ? "236px" : "260px",
                         maxWidth: "calc(100vw - 40px)",
-                        padding: "18px 20px",
+                        padding: isMobile ? "13px 16px" : "18px 20px",
                         borderRadius: "16px",
                         background: "rgba(6, 18, 10, 0.92)",
                         backdropFilter: "blur(16px)",
@@ -222,15 +229,16 @@ export default function Home() {
                     }}
                 >
                     <div style={{
-                        fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em",
+                        fontSize: isMobile ? "0.62rem" : "0.7rem", fontWeight: 700, letterSpacing: "0.14em",
                         textTransform: "uppercase", color: "rgba(52,211,153,0.8)",
-                        marginBottom: "8px",
+                        marginBottom: isMobile ? "6px" : "8px",
                     }}>
                         Tango — Your writing partner
                     </div>
                     <div style={{
-                        fontSize: "0.8rem", lineHeight: 1.5, color: "rgba(210,240,225,0.82)",
-                        marginBottom: "12px",
+                        fontSize: isMobile ? "0.72rem" : "0.8rem",
+                        lineHeight: 1.45, color: "rgba(210,240,225,0.82)",
+                        marginBottom: isMobile ? "9px" : "12px",
                     }}>
                         When you know what you need to say but not how to say it. Tango learns the situation, then drafts it for you.
                     </div>
@@ -239,8 +247,8 @@ export default function Home() {
                     }}>
                         {["Messages", "Emails", "Tough conversations"].map((tag) => (
                             <span key={tag} style={{
-                                fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.04em",
-                                padding: "3px 9px", borderRadius: "8px",
+                                fontSize: isMobile ? "0.6rem" : "0.65rem", fontWeight: 600, letterSpacing: "0.04em",
+                                padding: isMobile ? "2px 7px" : "3px 9px", borderRadius: "8px",
                                 background: "rgba(52,211,153,0.1)",
                                 border: "1px solid rgba(52,211,153,0.18)",
                                 color: "rgba(52,211,153,0.7)",
@@ -266,78 +274,78 @@ export default function Home() {
             )}
 
             {/* ════════════════════════════════════════
-                TAP-ME PILLS — mobile only, outside halves to escape stacking contexts
+                TAP-ME PILLS — mobile only, outside halves to escape stacking contexts.
+                The pill for the currently-selected side hides; the other stays so
+                the user knows they can tap it next.
             ════════════════════════════════════════ */}
-            {hovered === null && (
-                <>
-                    {/* Bear tap-me: bear is at bottom 18% of top half (50vh) */}
-                    <div
-                        className="md:hidden"
-                        style={{
-                            position: "absolute",
-                            top: "calc(41% - 230px)",
-                            left: "50%",
-                            zIndex: 25,
-                            padding: "4px 12px",
-                            borderRadius: "10px",
-                            background: "rgba(10, 22, 12, 0.85)",
-                            border: "1px solid rgba(251,191,36,0.2)",
-                            color: "rgba(251,191,36,0.7)",
-                            fontSize: "0.65rem",
-                            fontWeight: 600,
-                            letterSpacing: "0.05em",
-                            whiteSpace: "nowrap",
-                            animation: "tap-bounce 2s ease-in-out infinite",
-                            pointerEvents: "none",
-                        }}
-                    >
-                        Tap me
-                        <div style={{
-                            position: "absolute",
-                            bottom: "-6px",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            width: 0, height: 0,
-                            borderLeft: "5px solid transparent",
-                            borderRight: "5px solid transparent",
-                            borderTop: "6px solid rgba(10, 22, 12, 0.85)",
-                        }} />
-                    </div>
-                    {/* Parrot tap-me: positioned where speech bubble appears */}
-                    <div
-                        className="md:hidden"
-                        style={{
-                            position: "absolute",
-                            top: "78%",
-                            left: "50%",
-                            zIndex: 25,
-                            padding: "4px 12px",
-                            borderRadius: "10px",
-                            background: "rgba(8, 20, 12, 0.85)",
-                            border: "1px solid rgba(52,211,153,0.2)",
-                            color: "rgba(52,211,153,0.7)",
-                            fontSize: "0.65rem",
-                            fontWeight: 600,
-                            letterSpacing: "0.05em",
-                            whiteSpace: "nowrap",
-                            animation: "tap-bounce 2s ease-in-out infinite",
-                            animationDelay: "1s",
-                            pointerEvents: "none",
-                        }}
-                    >
-                        Tap me
-                        <div style={{
-                            position: "absolute",
-                            bottom: "-6px",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            width: 0, height: 0,
-                            borderLeft: "5px solid transparent",
-                            borderRight: "5px solid transparent",
-                            borderTop: "6px solid rgba(8, 20, 12, 0.85)",
-                        }} />
-                    </div>
-                </>
+            {hovered !== "bear" && (
+                <div
+                    className="md:hidden"
+                    style={{
+                        position: "absolute",
+                        top: "calc(41% - 230px)",
+                        left: "50%",
+                        zIndex: 25,
+                        padding: "4px 12px",
+                        borderRadius: "10px",
+                        background: "rgba(10, 22, 12, 0.85)",
+                        border: "1px solid rgba(251,191,36,0.2)",
+                        color: "rgba(251,191,36,0.7)",
+                        fontSize: "0.65rem",
+                        fontWeight: 600,
+                        letterSpacing: "0.05em",
+                        whiteSpace: "nowrap",
+                        animation: "tap-bounce 2s ease-in-out infinite",
+                        pointerEvents: "none",
+                    }}
+                >
+                    Tap me
+                    <div style={{
+                        position: "absolute",
+                        bottom: "-6px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 0, height: 0,
+                        borderLeft: "5px solid transparent",
+                        borderRight: "5px solid transparent",
+                        borderTop: "6px solid rgba(10, 22, 12, 0.85)",
+                    }} />
+                </div>
+            )}
+            {hovered !== "parrot" && (
+                <div
+                    className="md:hidden"
+                    style={{
+                        position: "absolute",
+                        top: "78%",
+                        left: "50%",
+                        zIndex: 25,
+                        padding: "4px 12px",
+                        borderRadius: "10px",
+                        background: "rgba(8, 20, 12, 0.85)",
+                        border: "1px solid rgba(52,211,153,0.2)",
+                        color: "rgba(52,211,153,0.7)",
+                        fontSize: "0.65rem",
+                        fontWeight: 600,
+                        letterSpacing: "0.05em",
+                        whiteSpace: "nowrap",
+                        animation: "tap-bounce 2s ease-in-out infinite",
+                        animationDelay: "1s",
+                        pointerEvents: "none",
+                    }}
+                >
+                    Tap me
+                    <div style={{
+                        position: "absolute",
+                        bottom: "-6px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 0, height: 0,
+                        borderLeft: "5px solid transparent",
+                        borderRight: "5px solid transparent",
+                        borderTop: "6px solid rgba(8, 20, 12, 0.85)",
+                    }} />
+                </div>
             )}
 
             {/* ════════════════════════════════════════
