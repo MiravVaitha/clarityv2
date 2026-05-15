@@ -20,6 +20,7 @@ Required in `.env.local`:
 - `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key
 - `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key (server-only)
+- `CRON_SECRET` — Bearer token Vercel Cron uses to authenticate `/api/keepalive` (server-only)
 
 Optional:
 - `GEMINI_MODEL` / `GEMINI_FALLBACK_MODEL` — Override default Gemini models
@@ -48,6 +49,7 @@ Chat-based characters (`/api/bear`, `/api/parrot`) — Stateful conversational A
 
 - `/api/bear`, `/api/parrot` — Chat-based character endpoints.
 - `/api/delete-account` — Account deletion (rate-limited to 3 req/min).
+- `/api/keepalive` — Daily Vercel Cron ping (see `vercel.json`) that runs a tiny Supabase query so the free-tier project doesn't auto-pause from inactivity. Authenticated via `CRON_SECRET` Bearer header.
 
 ### Request flow & reliability
 
