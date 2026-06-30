@@ -171,9 +171,13 @@ export default function Login() {
                             <div style={{ position: "relative" }}>
                                 <input
                                     type={showPassword ? "text" : "password"}
-                                    placeholder="Password" value={password}
+                                    placeholder={mode === "signup" ? "Password (8+ characters)" : "Password"}
+                                    value={password}
                                     onChange={e => setPassword(e.target.value)}
-                                    required minLength={6}
+                                    required
+                                    // Existing accounts may still have 6-char passwords; only
+                                    // enforce the stronger minimum when creating a new one.
+                                    minLength={mode === "signup" ? 8 : 6}
                                     style={{ ...inputStyle, paddingRight: "44px" }}
                                 />
                                 <button type="button" onClick={() => setShowPassword(v => !v)} tabIndex={-1}
@@ -195,7 +199,7 @@ export default function Login() {
                                     type={showConfirmPassword ? "text" : "password"}
                                     placeholder="Confirm password" value={confirmPassword}
                                     onChange={e => setConfirmPassword(e.target.value)}
-                                    required minLength={6}
+                                    required minLength={8}
                                     style={{ ...inputStyle, paddingRight: "44px" }}
                                 />
                                 <button type="button" onClick={() => setShowConfirmPassword(v => !v)} tabIndex={-1}

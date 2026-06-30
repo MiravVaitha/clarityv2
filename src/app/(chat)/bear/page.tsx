@@ -32,6 +32,12 @@ interface HistoryItem {
 
 const CARD_MARKER = "__bear_card";
 
+// Replay at most this many prior messages to the API. Bounds the request size
+// on long sessions and stays under the server-side 100-message guard, so a
+// conversation can never grow large enough to be rejected. Oldest turns fall
+// out of context once a session exceeds this length.
+const MAX_HISTORY = 50;
+
 function uid() {
     return Math.random().toString(36).slice(2);
 }
@@ -63,7 +69,8 @@ function buildHistory(entries: ChatEntry[]): HistoryItem[] {
         .map((e) => ({
             role: e.type === "user" ? "user" : "bear",
             content: (e as { content: string }).content,
-        } as HistoryItem));
+        } as HistoryItem))
+        .slice(-MAX_HISTORY);
 }
 
 // ── Hamburger icon ─────────────────────────────────────────────────

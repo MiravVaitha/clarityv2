@@ -4,13 +4,13 @@ import { z } from 'zod';
 
 export const ParrotHistoryMessageSchema = z.object({
     role: z.enum(['user', 'parrot']),
-    content: z.string().min(1),
+    content: z.string().min(1).max(15000),
 });
 
 export const ParrotRequestSchema = z.object({
     session_id: z.string().uuid().optional(),
     message: z.string().min(1).max(5000),
-    history: z.array(ParrotHistoryMessageSchema).default([]),
+    history: z.array(ParrotHistoryMessageSchema).max(100).default([]),
 });
 
 // ── Draft schemas ──────────────────────────────────────────────────

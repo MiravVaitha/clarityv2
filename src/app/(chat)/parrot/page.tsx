@@ -32,6 +32,12 @@ interface HistoryItem {
 
 const DRAFT_MARKER = "__parrot_draft";
 
+// Replay at most this many prior messages to the API. Bounds the request size
+// on long sessions and stays under the server-side 100-message guard, so a
+// conversation can never grow large enough to be rejected. Oldest turns fall
+// out of context once a session exceeds this length.
+const MAX_HISTORY = 50;
+
 function uid() {
     return Math.random().toString(36).slice(2);
 }
@@ -66,7 +72,7 @@ function buildHistory(entries: ChatEntry[]): HistoryItem[] {
         }
         // Draft entries: include the intro message so Parrot has full context for refinements
         return { role: "parrot" as const, content: e.introMessage };
-    });
+    }).slice(-MAX_HISTORY);
 }
 
 // ── Hamburger icon ─────────────────────────────────────────────────

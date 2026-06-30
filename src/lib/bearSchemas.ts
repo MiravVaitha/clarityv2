@@ -3,13 +3,13 @@ import { ClarifyOutputSchema } from './schemas';
 
 export const BearHistoryMessageSchema = z.object({
     role: z.enum(['user', 'bear']),
-    content: z.string().min(1),
+    content: z.string().min(1).max(15000),
 });
 
 export const BearRequestSchema = z.object({
     session_id: z.string().uuid().optional(),
     message: z.string().min(1).max(5000),
-    history: z.array(BearHistoryMessageSchema).default([]),
+    history: z.array(BearHistoryMessageSchema).max(100).default([]),
 });
 
 // What Gemini returns — validated before saving to DB

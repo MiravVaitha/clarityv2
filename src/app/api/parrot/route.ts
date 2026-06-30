@@ -30,7 +30,9 @@ export async function POST(request: NextRequest) {
         }
         const { session_id, message, history } = parsed.data;
 
-        // 3. Create a new session if none provided (first message)
+        // 3. Create a new session if none provided, or verify ownership of an existing one.
+        //    Defense in depth: RLS should already block cross-user access, but an explicit
+        //    check gives a friendly 404 instead of a silent insert failure.
         let activeSessionId = session_id;
         let isNewSession = false;
         if (!activeSessionId) {
@@ -47,6 +49,20 @@ export async function POST(request: NextRequest) {
             }
             activeSessionId = session.id;
             isNewSession = true;
+        } else {
+            const { data: owned } = await supabase
+                .from('sessions')
+                .select('id')
+                .eq('id', activeSessionId)
+                .eq('user_id', user.id)
+                .eq('engine', 'parrot')
+                .maybeSingle();
+            if (!owned) {
+                return NextResponse.json(
+                    { error: 'I can\'t find that conversation. Try starting a new one.' },
+                    { status: 404 }
+                );
+            }
         }
 
         // 4. Save the user's message

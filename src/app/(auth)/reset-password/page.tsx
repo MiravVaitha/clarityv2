@@ -45,8 +45,8 @@ export default function ResetPassword() {
             setError("Passwords don't match.");
             return;
         }
-        if (password.length < 6) {
-            setError("Password must be at least 6 characters.");
+        if (password.length < 8) {
+            setError("Password must be at least 8 characters.");
             return;
         }
 
@@ -147,10 +147,10 @@ export default function ResetPassword() {
                         <div style={{ position: "relative" }}>
                             <input
                                 type={showPassword ? "text" : "password"}
-                                placeholder="New password"
+                                placeholder="New password (8+ characters)"
                                 value={password}
                                 onChange={e => setPassword(e.target.value)}
-                                required minLength={6}
+                                required minLength={8}
                                 style={{ ...inputStyle, paddingRight: "44px" }}
                             />
                             <button type="button" onClick={() => setShowPassword(v => !v)} tabIndex={-1}
@@ -170,7 +170,7 @@ export default function ResetPassword() {
                                 placeholder="Confirm new password"
                                 value={confirmPassword}
                                 onChange={e => setConfirmPassword(e.target.value)}
-                                required minLength={6}
+                                required minLength={8}
                                 style={{ ...inputStyle, paddingRight: "44px" }}
                             />
                             <button type="button" onClick={() => setShowConfirm(v => !v)} tabIndex={-1}
