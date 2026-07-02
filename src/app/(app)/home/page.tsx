@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import BearCharacter from "@/components/bear/BearCharacter";
@@ -17,11 +17,13 @@ export default function Home() {
     const [parrotState, setParrotState] = useState<"idle" | "talking">("idle");
     const [hovered, setHovered] = useState<HoverSide>(null);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-    const [isTouchDevice, setIsTouchDevice] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    // Per-interaction input detection: device-level media queries like
+    // (hover: none) misreport on touchscreen laptops, so track the pointer
+    // type of the most recent pointerdown instead.
+    const lastPointerType = useRef<string>("mouse");
 
     useEffect(() => {
-        setIsTouchDevice(window.matchMedia("(hover: none)").matches);
         const mq = window.matchMedia("(max-width: 767px)");
         const updateMobile = () => setIsMobile(mq.matches);
         updateMobile();
@@ -46,8 +48,12 @@ export default function Home() {
         setHovered(null);
     };
 
+    const handlePointerEnter = (side: "bear" | "parrot") => (e: React.PointerEvent) => {
+        if (e.pointerType !== "touch") activateSide(side);
+    };
+
     const handleSideClick = (side: "bear" | "parrot") => {
-        if (isTouchDevice) {
+        if (lastPointerType.current === "touch") {
             if (hovered === side) {
                 clearSides();
             } else {
@@ -61,7 +67,8 @@ export default function Home() {
         <div
             className="fixed inset-0 flex flex-col md:flex-row overflow-hidden"
             style={{ zIndex: 0 }}
-            onMouseLeave={() => { if (!isTouchDevice) clearSides(); }}
+            onPointerDown={(e) => { lastPointerType.current = e.pointerType; }}
+            onPointerLeave={(e) => { if (e.pointerType !== "touch") clearSides(); }}
         >
             {/* ════════════════════════════════════════
                 BEAR HALF — left on desktop, top on mobile
@@ -75,7 +82,7 @@ export default function Home() {
                     filter: hovered === "parrot" ? "brightness(0.5)" : "none",
                     isolation: "isolate",
                 }}
-                onMouseEnter={() => { if (!isTouchDevice) activateSide("bear"); }}
+                onPointerEnter={handlePointerEnter("bear")}
                 onClick={() => handleSideClick("bear")}
             >
                 {/* Rive mouse-tracking forest background */}
@@ -109,7 +116,7 @@ export default function Home() {
                     transition: "filter 0.5s ease",
                     filter: hovered === "bear" ? "brightness(0.5)" : "none",
                 }}
-                onMouseEnter={() => { if (!isTouchDevice) activateSide("parrot"); }}
+                onPointerEnter={handlePointerEnter("parrot")}
                 onClick={() => handleSideClick("parrot")}
             >
                 {/* Rive parallax forest background */}
