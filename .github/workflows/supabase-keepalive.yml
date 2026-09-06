@@ -1,0 +1,46 @@
+# Supabase keepalive
+#
+# Supabase pauses a free-plan project after 7 days of low activity. The Vercel
+# Cron at /api/keepalive still runs as a second path, but Vercel's Hobby crons
+# are best-effort: one shot a day, no retry, and a dropped delivery leaves no
+# log at all. This workflow is the primary keepalive because GitHub Actions is
+# observable — it keeps a run history and emails when a run goes red.
+
+name: Supabase keepalive
+
+on:
+  schedule:
+    # Twice a day, off the hour. GitHub delays scheduled runs under load and may
+    # drop queued ones entirely, and the top of every hour is its worst window.
+    - cron: '23 7 * * *'
+    - cron: '47 19 * * *'
+  workflow_dispatch:
+    inputs:
+      force_heartbeat:
+        description: 'Force the heartbeat commit (to test the 60-day path)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ping Supabase Postgres
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: bash .github/scripts/supabase-ping.sh
+
+      - name: Heartbeat commit if the repo has gone quiet
+        env:
+          FORCE: ${{ inputs.force_heartbeat }}
+        run: bash .github/scripts/keepalive-heartbeat.sh

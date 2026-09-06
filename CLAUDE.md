@@ -49,7 +49,16 @@ Chat-based characters (`/api/bear`, `/api/parrot`) — Stateful conversational A
 
 - `/api/bear`, `/api/parrot` — Chat-based character endpoints.
 - `/api/delete-account` — Account deletion (rate-limited to 3 req/min).
-- `/api/keepalive` — Daily Vercel Cron ping (see `vercel.json`) that runs a tiny Supabase query so the free-tier project doesn't auto-pause from inactivity. Authenticated via `CRON_SECRET` Bearer header.
+- `/api/keepalive` — Secondary anti-pause ping, triggered daily by Vercel Cron (see `vercel.json`). Runs a tiny Supabase query and is authenticated via `CRON_SECRET` Bearer header. The *primary* keepalive is the GitHub Actions workflow below; this route is kept as an independent second path.
+
+### Supabase keepalive
+
+Supabase pauses free-plan projects after 7 days of low activity. Two independent mechanisms keep it open:
+
+- **Primary — `.github/workflows/supabase-keepalive.yml`.** Runs twice daily (07:23 / 19:47 UTC) and opens a real Postgres connection via `psql` (`.github/scripts/supabase-ping.sh`), reading `select count(*) from sessions`. Needs the `SUPABASE_DB_URL` repository secret: the Supabase **Session pooler** URI, *not* the direct connection — GitHub runners are IPv4-only and the direct host is IPv6-only on the free plan. A failed run exits non-zero, which is what triggers GitHub's failure email; that email is the monitoring.
+- **Secondary — Vercel Cron → `/api/keepalive`.** Hobby crons are best-effort with no retry and no alert on a missed delivery, so this is a backup rather than the mechanism to trust.
+
+`.github/scripts/keepalive-heartbeat.sh` keeps the *scheduler* alive: GitHub disables scheduled workflows in public repos after 60 days of inactivity, so after 50 quiet days the workflow pushes a dated `.github/keepalive-stamp` commit. Trigger it manually (Actions → Run workflow) with `force_heartbeat` to test that path.
 
 ### Request flow & reliability
 

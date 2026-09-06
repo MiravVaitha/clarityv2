@@ -1,0 +1,4 @@
+# These scripts run on Linux CI runners. Checked out with CRLF, a shebang line
+# fails there with an obscure `$'\r': command not found`, so pin them to LF
+# regardless of the checking-out machine's core.autocrlf setting.
+*.sh text eol=lf
